@@ -100,6 +100,9 @@ Fast path to prompt-based generation.
 ### Settings
 
 Secondary destination for app preferences and AI configuration/status.
+Currently a lightweight placeholder screen; showing whether a real AI
+provider is configured (vs. the offline fallback) is a natural
+follow-up, not yet implemented.
 
 ## 5. List Behavior
 
@@ -140,7 +143,12 @@ Users can reorder items with drag and drop.
 
 Ordering must persist across navigation and app restart.
 
-Sections, when exposed, can also be reordered.
+Sections, when exposed, can also be reordered (via explicit up/down
+controls, not drag).
+
+Item reordering also exposes "move up"/"move down" as accessibility
+actions (available whenever applicable, i.e. not at either end of the
+list), so reordering does not require performing a drag gesture.
 
 ## 8. Sections
 
@@ -235,11 +243,13 @@ Atomic update if accepted
 
 The original list is preserved until acceptance.
 
-Completion-state mapping during AI modifications must be deliberately
-defined before TASK-052 is completed. Default preferred behavior:
-preserve completion for clearly unchanged items when identity/matching
-is reliable; otherwise prefer correctness and transparency over
-guessing.
+Completion-state mapping during AI modifications, as implemented: an
+item in the proposed result keeps its existing completion only when
+its trimmed text exactly matches an existing item's trimmed text (each
+existing item can satisfy at most one match, so duplicate text never
+double-preserves); a reworded, new, or extra duplicate item always
+starts unchecked. The AI is never able to set completion directly ---
+its output format has no completion field at all.
 
 ## 13. Offline Behavior
 
@@ -268,7 +278,40 @@ Provide a direct add-item action.
 
 Show built-in templates and explain "Save as Template."
 
-## 15. Non-Goals for MVP
+## 15. Search
+
+The Lists home screen has a persistent search field. It filters by
+list title or any item's text within that list (case-insensitive), so
+"which list has milk on it" is as answerable as "which list is named
+Groceries." A distinct empty state explains when a search has no
+matches, separate from the "no lists yet" empty state. Clearing the
+search restores the full list.
+
+## 16. Undo and Confirmation
+
+Every destructive action has either a confirmation step or an undo
+path, chosen per action:
+
+-   **Delete list:** confirm, then undo via a snackbar action.
+-   **Delete item:** no confirmation (too frequent an action for that
+    friction to be worth it) --- undo via a snackbar action instead.
+-   **Clear completed:** confirm (a bulk action), then undo restores
+    every cleared item exactly.
+-   **Delete section, delete template:** confirm only; these are less
+    frequent, more deliberate actions where a dialog is proportionate.
+
+Undo always restores the exact original row (id, text, section,
+sort order, and completion), not an approximation.
+
+## 17. Appearance
+
+The app follows the system's light/dark setting automatically. Dark
+mode uses a deliberately designed dark palette derived from the same
+accent color as light mode (via Material 3's tonal color system), not
+a mechanical inversion. All screens read colors through the active
+theme, so there is nothing to configure per-screen.
+
+## 18. Non-Goals for MVP
 
 Not part of MVP unless explicitly promoted into `PLAN.md`:
 
@@ -284,7 +327,7 @@ Not part of MVP unless explicitly promoted into `PLAN.md`:
 -   subscriptions;
 -   automatic background AI changes.
 
-## 16. Success Criteria
+## 19. Success Criteria
 
 The MVP succeeds if a user can reliably:
 

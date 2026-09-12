@@ -4,6 +4,72 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-073 blocked on iOS build verification
+
+**Done (verified on this machine):**
+
+-   `dart format .` --- no changes.
+-   `flutter analyze` --- no issues.
+-   `flutter test --concurrency=1` --- **231/231 passing**, including
+    the full `test/integration/` suite from TASK-070, on a from-scratch
+    run after killing accumulated stray `dart`/`flutter_tester`
+    processes first (see TASK-070's note --- this machine reliably
+    needs that before any `flutter test` invocation, or the run fails
+    outright on a locked native-asset file rather than merely being
+    slow).
+-   `flutter build apk --release` --- succeeds, producing a 55.4MB
+    `app-release.apk`. Built **without** `--dart-define-from-file`, so
+    `String.fromEnvironment('OpenAI_API_Key')` compiles to an empty
+    string and `main.dart` never constructs `OpenAiListGenerationService`
+    --- empirically confirms ADR-007/ADR-009's "no privileged key in a
+    distributable binary" holds for this exact build command, not just
+    in theory.
+-   **No secrets committed:** `git ls-files | grep` for the `sk-proj-`/
+    generic long-secret-token shape across every tracked file found
+    nothing; `.env` is confirmed gitignored and untracked
+    (`git check-ignore -v .env`); the release APK's build output and
+    intermediate `build/` directory are gitignored (`**/build/`), so
+    nothing from this verification pass risks being committed either.
+-   **Product spec reflects shipped behavior:** audited
+    `docs/PRODUCT_SPEC.md` against the actual app and found it
+    genuinely stale in three places, now fixed: (1) Settings was
+    described as showing "AI configuration/status" but is actually
+    still a bare placeholder screen --- corrected to say so explicitly
+    rather than overclaim; (2) the AI-modification completion-mapping
+    section still said the rule "must be deliberately defined before
+    TASK-052 is completed" (future tense, now resolved) --- replaced
+    with the actual implemented rule (exact trimmed-text match, each
+    existing item matchable once); (3) Milestone 6 shipped four
+    user-facing features with zero mention in the spec at all ---
+    added dedicated sections for search (§15), undo/confirmation
+    policy per destructive action (§16), and system-following dark
+    mode (§17), plus a note on §7 Ordering about the accessible
+    non-drag reorder action. Sections 15/16 were renumbered to 18/19;
+    checked every `PRODUCT_SPEC.md section N` cross-reference elsewhere
+    in the repo (`list_detail_screen.dart`, `PROGRESS.md`'s own history)
+    and confirmed none pointed at the renumbered sections.
+
+**Blocked:** "iOS build is verified in an appropriate macOS
+environment before iOS release" cannot be completed here --- this
+session runs on Windows, and building/verifying an iOS target
+genuinely requires Xcode on macOS, which is not available. This is a
+real environment blocker per `CLAUDE.md`'s definition ("required
+platform hardware/environment unavailable"), not a difficulty to push
+through. Per `CLAUDE.md`'s Blockers guidance: working state is
+preserved (nothing risky was attempted), everything that *can* be
+verified on this machine has been, and the blocker is recorded here
+rather than guessed past. TASK-073 stays unchecked in `PLAN.md` until
+an iOS-capable environment is available to complete this specific
+criterion; every other criterion for it already passes and does not
+need to be re-verified once that happens, only the iOS build step
+itself.
+
+**Next:** iOS build verification, whenever a macOS environment becomes
+available. Everything else required for a release candidate is
+already green.
+
+---
+
 ## 2026-09-12 --- TASK-072 complete
 
 **Done:** Documentation-only, deliberately: implementing a real
