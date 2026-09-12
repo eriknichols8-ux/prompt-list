@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
@@ -207,6 +208,57 @@ void main() {
         .toList();
     expect(texts, ['Eggs', 'Milk']);
   });
+
+  driftTestWidgets(
+    'exposes item reordering as accessibility actions, not just drag',
+    (tester) async {
+      for (final entry in const [
+        ('item-1', 'Milk', 1000),
+        ('item-2', 'Eggs', 2000),
+        ('item-3', 'Bread', 3000),
+      ]) {
+        await database
+            .into(database.listItems)
+            .insert(
+              ListItemsCompanion.insert(
+                id: entry.$1,
+                sectionId: 'section-1',
+                content: entry.$2,
+                sortOrder: entry.$3,
+                createdAt: DateTime.now(),
+              ),
+            );
+      }
+
+      await pumpDetailScreen(tester);
+
+      // The first item has no "move up" action; the last has no "move
+      // down" action -- there's nowhere for either to go.
+      expect(_customActionLabels(tester, 'Milk'), {'Move down'});
+      expect(_customActionLabels(tester, 'Bread'), {'Move up'});
+
+      final middleActions = _customActionsFor(tester, 'Eggs');
+      expect(_customActionLabels(tester, 'Eggs'), {'Move up', 'Move down'});
+
+      final moveDown = middleActions.keys.firstWhere(
+        (action) => action.label == 'Move down',
+      );
+      middleActions[moveDown]!();
+      await tester.pumpAndSettle();
+
+      final texts = tester
+          .widgetList<Text>(
+            find.descendant(
+              of: find.byType(ListTile),
+              matching: find.byType(Text),
+            ),
+          )
+          .map((t) => t.data)
+          .whereType<String>()
+          .toList();
+      expect(texts, ['Milk', 'Bread', 'Eggs']);
+    },
+  );
 
   driftTestWidgets('deleting an item removes it from the list', (tester) async {
     await database
@@ -472,4 +524,30 @@ void main() {
       // with; the schema itself has no such column.
     },
   );
+}
+
+/// The [Semantics] widget wrapping an item row carries its move up/down
+/// custom actions (see `_ItemRow` in `list_detail_screen.dart`). Several
+/// ancestor `Semantics` widgets exist above any given text (Flutter adds
+/// its own implicit ones), so this picks the one that actually declares
+/// custom actions.
+Map<CustomSemanticsAction, VoidCallback> _customActionsFor(
+  WidgetTester tester,
+  String itemText,
+) {
+  final candidates = tester.widgetList<Semantics>(
+    find.ancestor(of: find.text(itemText), matching: find.byType(Semantics)),
+  );
+  for (final widget in candidates) {
+    final actions = widget.properties.customSemanticsActions;
+    if (actions != null && actions.isNotEmpty) return actions;
+  }
+  throw StateError('No custom semantics actions found for "$itemText"');
+}
+
+Set<String> _customActionLabels(WidgetTester tester, String itemText) {
+  return _customActionsFor(
+    tester,
+    itemText,
+  ).keys.map((action) => action.label!).toSet();
 }

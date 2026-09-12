@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/core/ui/confirm_dialog.dart';
@@ -419,6 +420,12 @@ class _SimpleItemsViewState extends ConsumerState<_SimpleItemsView> {
                     key: ValueKey(widget.items[index].id),
                     item: widget.items[index],
                     index: index,
+                    onMoveUp: index > 0
+                        ? () => _reorder(index, index - 1)
+                        : null,
+                    onMoveDown: index < widget.items.length - 1
+                        ? () => _reorder(index, index + 1)
+                        : null,
                   ),
                 ),
         ),
@@ -600,11 +607,15 @@ class _SectionBlockState extends ConsumerState<_SectionBlock> {
             child: Row(
               children: [
                 Expanded(
-                  child: InkWell(
-                    onTap: _rename,
-                    child: Text(
-                      _section.title ?? 'Untitled section',
-                      style: theme.textTheme.titleSmall,
+                  child: Semantics(
+                    button: true,
+                    hint: 'Rename section',
+                    child: InkWell(
+                      onTap: _rename,
+                      child: Text(
+                        _section.title ?? 'Untitled section',
+                        style: theme.textTheme.titleSmall,
+                      ),
                     ),
                   ),
                 ),
@@ -640,6 +651,10 @@ class _SectionBlockState extends ConsumerState<_SectionBlock> {
               item: _items[index],
               index: index,
               otherSections: widget.otherSections,
+              onMoveUp: index > 0 ? () => _reorder(index, index - 1) : null,
+              onMoveDown: index < _items.length - 1
+                  ? () => _reorder(index, index + 1)
+                  : null,
             ),
           ),
           Padding(
@@ -673,19 +688,30 @@ class _SectionBlockState extends ConsumerState<_SectionBlock> {
 
 /// A single item row: checkbox, text (tap to edit), and trailing
 /// delete/move/drag-handle actions. Shared by both the simple and
-/// sectioned views. [otherSections] is empty (hiding the move action)
-/// in the simple view, since there is nowhere else to move an item to.
+/// sectioned views. [otherSections] is empty (hiding the move-to-section
+/// action) in the simple view, since there is nowhere else to move an
+/// item to.
+///
+/// [onMoveUp]/[onMoveDown] (null when not applicable, e.g. at either
+/// end of the list) back the same reorder call the drag handle uses,
+/// exposed as accessibility custom actions rather than visible buttons
+/// -- a screen reader user can reorder without ever performing a drag
+/// gesture, without adding icons to a row that already carries several.
 class _ItemRow extends ConsumerWidget {
   const _ItemRow({
     super.key,
     required this.item,
     required this.index,
     this.otherSections = const [],
+    this.onMoveUp,
+    this.onMoveDown,
   });
 
   final ListItemRecord item;
   final int index;
   final List<SectionRecord> otherSections;
+  final VoidCallback? onMoveUp;
+  final VoidCallback? onMoveDown;
 
   Future<void> _editItem(BuildContext context, WidgetRef ref) async {
     final newText = await showEditItemDialog(
@@ -734,43 +760,49 @@ class _ItemRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
-    return ListTile(
-      leading: Checkbox(
-        value: item.completed,
-        onChanged: (_) => _toggleCompleted(ref),
-      ),
-      title: Text(
-        item.content,
-        style: item.completed
-            ? theme.textTheme.bodyLarge?.copyWith(
-                decoration: TextDecoration.lineThrough,
-                color: theme.colorScheme.onSurfaceVariant,
-              )
-            : theme.textTheme.bodyLarge,
-      ),
-      onTap: () => _editItem(context, ref),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (otherSections.isNotEmpty)
+    return Semantics(
+      customSemanticsActions: {
+        const CustomSemanticsAction(label: 'Move up'): ?onMoveUp,
+        const CustomSemanticsAction(label: 'Move down'): ?onMoveDown,
+      },
+      child: ListTile(
+        leading: Checkbox(
+          value: item.completed,
+          onChanged: (_) => _toggleCompleted(ref),
+        ),
+        title: Text(
+          item.content,
+          style: item.completed
+              ? theme.textTheme.bodyLarge?.copyWith(
+                  decoration: TextDecoration.lineThrough,
+                  color: theme.colorScheme.onSurfaceVariant,
+                )
+              : theme.textTheme.bodyLarge,
+        ),
+        onTap: () => _editItem(context, ref),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (otherSections.isNotEmpty)
+              IconButton(
+                icon: const Icon(Icons.drive_file_move_outline),
+                tooltip: 'Move to section',
+                onPressed: () => _moveToSection(context, ref),
+              ),
             IconButton(
-              icon: const Icon(Icons.drive_file_move_outline),
-              tooltip: 'Move to section',
-              onPressed: () => _moveToSection(context, ref),
+              icon: const Icon(Icons.delete_outline),
+              tooltip: 'Delete item',
+              onPressed: () => _deleteItem(context, ref),
             ),
-          IconButton(
-            icon: const Icon(Icons.delete_outline),
-            tooltip: 'Delete item',
-            onPressed: () => _deleteItem(context, ref),
-          ),
-          ReorderableDragStartListener(
-            index: index,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 4),
-              child: Icon(Icons.drag_handle),
+            ReorderableDragStartListener(
+              index: index,
+              child: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                child: Icon(Icons.drag_handle),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

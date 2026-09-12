@@ -357,7 +357,7 @@ order/state. - Tests cover undo.
 
 **Dependencies:** TASK-017.
 
-### [ ] TASK-062 --- Accessibility and interaction polish
+### [x] TASK-062 --- Accessibility and interaction polish
 
 **Goal:** Ensure core workflows are usable.
 

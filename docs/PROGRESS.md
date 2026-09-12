@@ -4,6 +4,63 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-062 complete
+
+**Done:** Dispatched a research-only audit (grep-based, no code changes)
+against every acceptance criterion before touching anything, to avoid
+guessing at gaps that didn't exist:
+
+-   **Controls have useful semantics/labels** --- every existing
+    `IconButton` already had a `tooltip` (which Flutter surfaces as a
+    semantic label); the one real gap was the section-title `InkWell`
+    (tap to rename) exposing no hint that it's actionable. Fixed by
+    wrapping it in `Semantics(button: true, hint: 'Rename section')`.
+-   **Touch targets** --- the smallest icon buttons (`iconSize: 18`)
+    have no overriding `constraints`/`padding`/`visualDensity`, so
+    Material 3's ~48dp default tap target still applies everywhere.
+    No change needed.
+-   **Text scaling** --- no fixed-height containers wrap `Text`
+    anywhere in `lib/features/`. Manually verified on the Android
+    emulator at `font_scale` 1.3 and 2.0 (`adb shell settings put
+    system font_scale`): the Lists screen and `ListDetailScreen` both
+    reflow (titles wrap to a second line, rows grow taller) with no
+    clipping or overflow at either scale.
+-   **Completed items not color-only** --- already true:
+    `_ItemRow` combines an independent `Checkbox` widget with
+    `TextDecoration.lineThrough`, on top of the color change. No
+    change needed.
+-   **Drag/reorder accessible alternative** --- the real, confirmed
+    gap. Sections already have up/down icon buttons alongside their
+    (non-drag) controls; items had only `ReorderableDragStartListener`,
+    no alternative at all. Adding more icon buttons to a row that
+    already carries move-to-section/delete/drag-handle risked real
+    visual clutter (a guardrail this project takes seriously), so
+    instead each `_ItemRow` now wraps its `ListTile` in
+    `Semantics(customSemanticsActions: {...})` exposing "Move up"/
+    "Move down" (present only when applicable --- absent at either end
+    of the list) as screen-reader-discoverable actions that call the
+    exact same `reorderItem` the drag handle uses. Zero visual
+    footprint; a TalkBack/VoiceOver user can reorder without ever
+    performing a drag gesture.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (225/225 passing, up from 224). New test in
+`list_detail_screen_test.dart`: seeds three items and confirms the
+first exposes only "Move down", the last exposes only "Move up", the
+middle one exposes both, and invoking the "Move down" custom action
+(found by reading the `Semantics` widget's `properties
+.customSemanticsActions` directly, then calling the callback --
+Flutter's `SemanticsData` doesn't carry the closures, only integer
+action IDs, so this is the correct way to test a custom action's
+wiring rather than its platform-level dispatch) reorders the list
+exactly like a drag would. Also manually verified text scaling on the
+Android emulator per above.
+
+**Next:** TASK-063 --- dark mode/theme behavior (system-following
+light/dark, no hard-coded colors breaking contrast).
+
+---
+
 ## 2026-09-12 --- TASK-061 complete
 
 **Done:** Audited every destructive action in the app against "supports
