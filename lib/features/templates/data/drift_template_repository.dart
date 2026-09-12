@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:promptlist/core/database/app_database.dart';
+import 'package:promptlist/features/templates/data/built_in_templates.dart';
 import 'package:promptlist/features/templates/domain/template_repository.dart';
 import 'package:uuid/uuid.dart';
 
@@ -205,5 +206,22 @@ class DriftTemplateRepository implements TemplateRepository {
     await (_db.delete(
       _db.templates,
     )..where((tbl) => tbl.id.equals(templateId))).go();
+  }
+
+  @override
+  Future<void> seedBuiltInTemplates() async {
+    final existingBuiltIns = await (_db.select(
+      _db.templates,
+    )..where((tbl) => tbl.isBuiltIn.equals(true))).get();
+    if (existingBuiltIns.isNotEmpty) return;
+
+    for (final definition in builtInTemplates) {
+      await createTemplate(
+        name: definition.name,
+        description: definition.description,
+        isBuiltIn: true,
+        sections: definition.sections,
+      );
+    }
   }
 }

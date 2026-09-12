@@ -1,6 +1,7 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promptlist/core/database/app_database.dart';
+import 'package:promptlist/features/templates/data/built_in_templates.dart';
 import 'package:promptlist/features/templates/data/drift_template_repository.dart';
 import 'package:promptlist/features/templates/domain/template_repository.dart';
 
@@ -193,5 +194,54 @@ void main() {
 
       expect(await repository.getTemplate(template.id), isNotNull);
     });
+  });
+
+  group('seedBuiltInTemplates', () {
+    test(
+      'creates at least 5 built-in templates matching the fixed set',
+      () async {
+        await repository.seedBuiltInTemplates();
+
+        final templates = await repository.watchTemplates().first;
+        final builtIns = templates.where((t) => t.isBuiltIn).toList();
+
+        expect(builtIns.length, greaterThanOrEqualTo(5));
+        expect(
+          builtIns.map((t) => t.name).toSet(),
+          builtInTemplates.map((d) => d.name).toSet(),
+        );
+      },
+    );
+
+    test('seeds full section/item structure for each template', () async {
+      await repository.seedBuiltInTemplates();
+
+      for (final definition in builtInTemplates) {
+        final templates = await repository.watchTemplates().first;
+        final record = templates.singleWhere((t) => t.name == definition.name);
+        final withSections = await repository.getTemplate(record.id);
+
+        expect(withSections!.sections, hasLength(definition.sections.length));
+        for (var i = 0; i < definition.sections.length; i++) {
+          expect(
+            withSections.sections[i].items.map((item) => item.content).toList(),
+            definition.sections[i].items,
+          );
+        }
+      }
+    });
+
+    test(
+      'is idempotent: calling it again does not duplicate templates',
+      () async {
+        await repository.seedBuiltInTemplates();
+        await repository.seedBuiltInTemplates();
+
+        final templates = await repository.watchTemplates().first;
+        final builtIns = templates.where((t) => t.isBuiltIn).toList();
+
+        expect(builtIns.length, builtInTemplates.length);
+      },
+    );
   });
 }

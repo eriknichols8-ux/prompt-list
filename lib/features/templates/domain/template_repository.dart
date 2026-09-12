@@ -83,4 +83,9 @@ abstract interface class TemplateRepository {
   ///
   /// Throws [TemplateValidationException] if the template is built-in.
   Future<void> deleteTemplate(String templateId);
+
+  /// Seeds PromptList's built-in templates (see
+  /// `built_in_templates.dart`) if no built-in templates exist yet.
+  /// Idempotent and safe to call on every app startup.
+  Future<void> seedBuiltInTemplates();
 }

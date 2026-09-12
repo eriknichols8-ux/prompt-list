@@ -175,7 +175,7 @@ version changes.
 
 **Dependencies:** TASK-021.
 
-### [ ] TASK-031 --- Built-in templates
+### [x] TASK-031 --- Built-in templates
 
 **Goal:** Ship a small useful starter set.
 

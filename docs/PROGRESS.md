@@ -4,6 +4,36 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-031 complete
+
+**Done:** Added 5 built-in templates as fixed Dart data
+(`lib/features/templates/data/built_in_templates.dart`: Grocery Run,
+Weekend Trip Packing, Moving Day, Weekly House Cleaning, Morning
+Routine --- each with real sections and items, no network/AI call
+involved, so they're deterministic by construction) and
+`TemplateRepository.seedBuiltInTemplates()`: idempotent (checks for
+any existing `isBuiltIn` row first, so it's safe to call on every app
+startup without duplicating). Wired seeding into `main.dart` --- it now
+builds a `ProviderContainer`, awaits `seedBuiltInTemplates()` before
+the first frame, then hands that same container to the widget tree
+via `UncontrolledProviderScope` (so seeding and the rest of the app
+share one `AppDatabase` instance rather than opening two).
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (102/102 passing, up from 99): seeding produces at least 5
+built-in templates whose names match the fixed set, each with its
+full section/item structure intact, and calling it twice never
+duplicates anything. Also manually ran the app on an Android emulator
+after the `main.dart` change (an async `main()` plus the
+`ProviderContainer`/`UncontrolledProviderScope` startup pattern is
+worth actually launching, not just `flutter analyze`-checking) and
+confirmed it still starts normally with no crash from the new seeding
+step.
+
+**Next:** TASK-032 --- create list from template.
+
+---
+
 ## 2026-09-12 --- TASK-030 complete (Milestone 3 started)
 
 **Done:** Added the schema for reusable templates --- `Templates`,
