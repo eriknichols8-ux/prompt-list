@@ -30,7 +30,7 @@ passes. - `flutter test` passes.
 
 **Dependencies:** none.
 
-### [ ] TASK-002 --- Establish project structure and dependencies
+### [x] TASK-002 --- Establish project structure and dependencies
 
 **Goal:** Add the minimal architecture needed for the MVP.
 

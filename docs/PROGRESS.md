@@ -4,6 +4,38 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-002 complete
+
+**Done:** Added Riverpod (`flutter_riverpod`) and Drift/SQLite
+(`drift`, `drift_flutter`, transitively `sqlite3_flutter_libs`) plus
+`path_provider`/`path` as runtime deps, and `drift_dev`/`build_runner`
+as dev deps. Created `lib/core/database/app_database.dart`: an
+`AppDatabase` with an intentionally empty table list (tables arrive in
+TASK-010) so the Drift + `build_runner` codegen path and the
+Riverpod-provided instance (`lib/core/database/database_provider.dart`,
+`appDatabaseProvider`) are proven end-to-end ahead of the real schema.
+Wrapped the app root in `ProviderScope` in `main.dart`. Generated
+`.g.dart` files are excluded from `flutter analyze` via
+`analysis_options.yaml` (standard practice for Drift-generated code).
+No new `features/` folders were created yet --- nothing lives in them
+until the tasks that need them (avoids empty scaffold folders per
+`ARCHITECTURE.md`).
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (2/2 passing: the existing app smoke test plus a new
+`test/core/database/app_database_test.dart` that opens/queries an
+in-memory `AppDatabase`). Confirmed native `sqlite3` works in this dev
+environment for in-memory Drift tests without extra setup. Note: the
+`flutter test` compact/expanded reporter occasionally mislabels which
+test file a progress line belongs to when multiple suites run
+concurrently on this machine --- cosmetic only; the final pass count is
+correct and authoritative.
+
+**Next:** TASK-003 --- app navigation and shell (Lists, Templates, AI
+Create, Settings).
+
+---
+
 ## 2026-09-12 --- TASK-001 complete
 
 **Done:** Bootstrapped the Flutter app with `flutter create --org
