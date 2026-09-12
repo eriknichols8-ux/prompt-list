@@ -86,7 +86,7 @@ cover empty and populated states.
 
 **Dependencies:** TASK-011, TASK-003.
 
-### [ ] TASK-013 --- Create blank list
+### [x] TASK-013 --- Create blank list
 
 **Goal:** Allow manual list creation.
 

@@ -109,4 +109,26 @@ void main() {
 
     expect(find.byType(ListDetailScreen), findsOneWidget);
   });
+
+  driftTestWidgets(
+    'creating a list via the FAB opens it and it then appears in the list',
+    (tester) async {
+      await pumpListsScreen(tester);
+
+      await tester.tap(find.text('New list'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Packing');
+      await tester.pump();
+      await tester.tap(find.text('Create'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ListDetailScreen), findsOneWidget);
+
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Packing'), findsOneWidget);
+      expect(find.text('No items yet'), findsOneWidget);
+    },
+  );
 }

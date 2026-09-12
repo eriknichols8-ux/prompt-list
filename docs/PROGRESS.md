@@ -4,6 +4,40 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-013 complete
+
+**Done:** Added a "New list" FAB to `ListsScreen` (now returns its own
+nested `Scaffold` so it owns that FAB independently of the other
+tabs) that opens `CreateListDialog`
+(`lib/features/lists/presentation/create_list_dialog.dart`). The
+dialog's Create button is disabled while the trimmed title is empty
+(so blank/whitespace-only titles can't be submitted from the UI at
+all) and calls `ListRepository.createList` --- which already rejects a
+blank title itself, from TASK-011 --- on submit; on success it pops
+with the created `ListRecord`. `ListsScreen` then pushes
+`ListDetailScreen` for that new list, satisfying "user lands in the
+new list."
+
+New-list persistence after restart relies on the same drift_flutter
+file-backed `AppDatabase` connection and repository behavior already
+covered by TASK-010/011's tests (a fresh query reads back what an
+earlier one wrote); there is no separate "restart" test here since
+that guarantee isn't specific to this task.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (27/27 passing). New
+`test/features/lists/presentation/create_list_dialog_test.dart` covers
+Create being disabled for blank/whitespace input and enabled once
+non-blank text is entered, cancelling persisting nothing, and
+submitting creating exactly one row with the trimmed title. Extended
+`lists_screen_test.dart` with an end-to-end case: tap the FAB, enter a
+title, tap Create, land on `ListDetailScreen`, navigate back, and see
+the new list with "No items yet."
+
+**Next:** TASK-014 --- list item CRUD.
+
+---
+
 ## 2026-09-12 --- TASK-012 complete
 
 **Done:** Built the real `ListsScreen`

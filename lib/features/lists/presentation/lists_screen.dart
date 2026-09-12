@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promptlist/features/lists/domain/list_summary.dart';
+import 'package:promptlist/features/lists/presentation/create_list_dialog.dart';
 import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
 import 'package:promptlist/features/lists/presentation/list_providers.dart';
 
@@ -9,16 +10,32 @@ import 'package:promptlist/features/lists/presentation/list_providers.dart';
 class ListsScreen extends ConsumerWidget {
   const ListsScreen({super.key});
 
+  Future<void> _createList(BuildContext context) async {
+    final created = await showCreateListDialog(context);
+    if (created == null || !context.mounted) return;
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ListDetailScreen(listId: created.id)),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaries = ref.watch(listSummariesProvider);
 
-    return summaries.when(
-      data: (lists) =>
-          lists.isEmpty ? const _EmptyListsState() : _ListsView(lists: lists),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) =>
-          Center(child: Text('Could not load your lists: $error')),
+    return Scaffold(
+      body: summaries.when(
+        data: (lists) =>
+            lists.isEmpty ? const _EmptyListsState() : _ListsView(lists: lists),
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) =>
+            Center(child: Text('Could not load your lists: $error')),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _createList(context),
+        icon: const Icon(Icons.add),
+        label: const Text('New list'),
+      ),
     );
   }
 }
