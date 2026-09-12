@@ -1288,6 +1288,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [TableUpdate('list_items', kind: UpdateKind.delete)],
     ),
   ]);
+  @override
+  DriftDatabaseOptions get options =>
+      const DriftDatabaseOptions(storeDateTimeAsText: true);
 }
 
 typedef $$ListsTableCreateCompanionBuilder = ListsCompanion Function({

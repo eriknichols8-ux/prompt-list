@@ -65,7 +65,7 @@ verify create/read behavior. - Schema versioning is established.
 
 **Dependencies:** TASK-002.
 
-### [ ] TASK-011 --- List repository CRUD
+### [x] TASK-011 --- List repository CRUD
 
 **Goal:** Provide testable list persistence APIs.
 

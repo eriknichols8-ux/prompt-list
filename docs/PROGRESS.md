@@ -4,6 +4,50 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-011 complete
+
+**Done:** Added `ListRepository` (domain interface,
+`lib/features/lists/domain/list_repository.dart`) and
+`DriftListRepository` (implementation,
+`lib/features/lists/data/drift_list_repository.dart`) with
+`watchLists`, `getList`, `createList`, `renameList`, and `deleteList`.
+`createList` validates a non-blank title (throwing
+`ListValidationException` otherwise, nothing persisted), trims
+title/description, and --- inside a transaction --- creates the list
+together with one default section (per the "Default Section Strategy"
+in `ARCHITECTURE.md`) so items can be attached immediately in later
+tasks. IDs are generated via an injectable `String Function()`
+(defaulting to `Uuid().v4`) so tests can use deterministic IDs.
+`deleteList` relies on the cascade FK from TASK-010. `watchLists`
+excludes archived lists and is reactive via Drift's `.watch()`.
+
+Added `uuid` as a direct dependency (was previously only transitive).
+
+**Bug found and fixed during this task:** the `renameList` test
+initially failed an `updatedAt` freshness assertion --- Drift's default
+`DateTimeColumn` storage is unix-timestamp integers (second
+resolution), so two writes within the same second produced identical
+`updatedAt` values. Added `build.yaml` setting
+`store_date_time_values_as_text: true` for `drift_dev`, which makes
+Drift store/compare `DateTime` columns as ISO-8601 text with full
+precision; regenerated `app_database.g.dart`. This is a project-wide
+setting (confirmed via the generated `DriftDatabaseOptions`), so it
+applies uniformly to the real app connection and to in-memory test
+connections alike --- worth remembering before writing any future test
+that compares timestamps.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (20/20 passing). New
+`test/features/lists/data/drift_list_repository_test.dart` covers
+title/description trimming, blank-title rejection on create and
+rename (nothing persisted/changed), get-by-id (found and missing),
+rename updating `updatedAt`, delete cascading to sections/items, and
+`watchLists` emitting on create and excluding archived lists.
+
+**Next:** TASK-012 --- Lists home screen.
+
+---
+
 ## 2026-09-12 --- TASK-010 complete (Milestone 1 started)
 
 **Done:** Added the real schema v1 in `lib/core/database/tables.dart`:
