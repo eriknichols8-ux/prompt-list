@@ -313,7 +313,7 @@ unchanged until user accepts. - Tests cover contract and validation.
 
 **Dependencies:** TASK-046.
 
-### [ ] TASK-051 --- "Ask AI to change this list" UI
+### [x] TASK-051 --- "Ask AI to change this list" UI
 
 **Goal:** Let users issue modification instructions.
 

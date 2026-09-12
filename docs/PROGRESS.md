@@ -4,6 +4,66 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-051 complete
+
+**Done:** Added the "Ask AI to change this list" entry point to
+`ListDetailScreen`'s menu (between "Add section" and "Clear
+completed"). Flow: `showAiModifyListDialog` (new
+`ai_modify_list_dialog.dart`, mirroring `RenameListDialog`'s shape)
+captures a free-text instruction; `buildListSnapshot` (new
+`lib/features/lists/domain/build_list_snapshot.dart`, mirroring
+`saveListAsTemplate`'s read-through-repositories pattern) turns the
+list's current title/description/sections/items into a `GeneratedList`
+snapshot; a non-dismissible loading dialog covers the
+`ListGenerationService.modifyList` call; and the result either opens
+`GeneratedListPreviewScreen` for review or shows the failure's message
+inline via a `SnackBar`.
+
+`GeneratedListPreviewScreen` gained two optional constructor
+parameters --- `title` (default `'Review generated list'`) and
+`acceptLabel` (a `String Function(int itemCount)?`, default `null`
+keeping the existing "Add to my lists (N items)" wording) --- so the
+same reviewed, database-free preview widget serves both generation
+("Review generated list" / "Add to my lists") and modification
+("Review AI changes" / "Apply changes") without duplicating it. This
+is exactly what `AI_CONTRACT.md` calls for: modification output is
+previewed "the same way as a fresh generation."
+
+Accepting the preview here does **not** yet touch the original list
+--- since applying a modification is TASK-052's job, accepting for now
+just shows a "Changes accepted." `SnackBar`, mirroring how TASK-042/043
+handled acceptance before TASK-044 wired up persistence. Cancelling at
+either the instruction dialog or the preview leaves the list
+completely untouched, which is trivially true here since neither path
+calls any repository mutation method.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (201/201 passing, up from 192). New
+`test/features/lists/domain/build_list_snapshot_test.dart` (4 tests,
+using real Drift repositories): captures title/description/sections/
+item text; never includes completion state; groups items under the
+right section across multiple sections; an empty section produces an
+empty items list. New
+`test/features/lists/presentation/list_detail_screen_ai_modify_test.dart`
+(5 tests): the menu action is present; cancelling the instruction
+dialog leaves the list untouched; submitting an instruction sends the
+exact current-list snapshot and instruction through to the service and
+opens the proposed result with the modification-specific title/button
+text; cancelling the proposed result preserves the original list
+exactly (verified against the real database); a failed modification
+shows its message inline. Also manually verified on the Android
+emulator: the menu item appears, the dialog captures an instruction,
+and the preview opens with "Review AI changes" / "Apply changes (3
+items)" wording.
+
+**Next:** TASK-052 --- apply approved AI modification (turn an
+accepted modification preview into an atomic update of the existing
+list, deciding which items can safely keep their existing completion
+state per `AI_CONTRACT.md`'s "Completion State During Modification"
+section).
+
+---
+
 ## 2026-09-12 --- TASK-050 complete (Milestone 5 started)
 
 **Done:** Extended `ListGenerationService` (rather than adding a

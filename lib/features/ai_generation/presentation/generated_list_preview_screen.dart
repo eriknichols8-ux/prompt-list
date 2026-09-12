@@ -2,18 +2,34 @@ import 'package:flutter/material.dart';
 
 import '../domain/generated_list.dart';
 
-/// Reviews an AI-generated list before it becomes a real list.
+/// Reviews an AI-generated list, or a proposed AI modification to an
+/// existing list, before anything changes for real.
 ///
 /// Nothing here touches the database: this screen only lets the user
 /// edit the title and remove unwanted items, then hands the edited
 /// [GeneratedList] back to its caller via [Navigator.pop]. Popping with
 /// `null` (via Cancel or the back button) discards the generated data
 /// entirely. Turning an accepted result into persisted list/section/item
-/// rows is handled by the caller (TASK-044).
+/// rows (TASK-044) or applying it to an existing list (TASK-052) is
+/// handled by the caller -- this screen doesn't know or care which.
+///
+/// [title] and [acceptLabel] let a caller adapt the wording to context
+/// (e.g. "Review AI changes" / "Apply changes" for a modification)
+/// without duplicating this widget.
 class GeneratedListPreviewScreen extends StatefulWidget {
-  const GeneratedListPreviewScreen({super.key, required this.initial});
+  const GeneratedListPreviewScreen({
+    super.key,
+    required this.initial,
+    this.title = 'Review generated list',
+    this.acceptLabel,
+  });
 
   final GeneratedList initial;
+  final String title;
+
+  /// Builds the accept button's label from the current item count.
+  /// Defaults to "Add to my lists (N items)".
+  final String Function(int itemCount)? acceptLabel;
 
   @override
   State<GeneratedListPreviewScreen> createState() =>
@@ -83,7 +99,7 @@ class _GeneratedListPreviewScreenState
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Review generated list'),
+        title: Text(widget.title),
         leading: IconButton(
           icon: const Icon(Icons.close),
           tooltip: 'Cancel',
@@ -125,7 +141,8 @@ class _GeneratedListPreviewScreenState
         child: FilledButton(
           onPressed: totalItems > 0 ? _accept : null,
           child: Text(
-            'Add to my lists ($totalItems item${totalItems == 1 ? '' : 's'})',
+            widget.acceptLabel?.call(totalItems) ??
+                'Add to my lists ($totalItems item${totalItems == 1 ? '' : 's'})',
           ),
         ),
       ),

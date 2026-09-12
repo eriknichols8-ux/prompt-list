@@ -2,7 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/core/ui/confirm_dialog.dart';
+import 'package:promptlist/features/ai_generation/domain/ai_generation_result.dart';
+import 'package:promptlist/features/ai_generation/domain/generated_list.dart';
+import 'package:promptlist/features/ai_generation/presentation/ai_generation_providers.dart';
+import 'package:promptlist/features/ai_generation/presentation/generated_list_preview_screen.dart';
+import 'package:promptlist/features/lists/domain/build_list_snapshot.dart';
 import 'package:promptlist/features/lists/domain/section_repository.dart';
+import 'package:promptlist/features/lists/presentation/ai_modify_list_dialog.dart';
 import 'package:promptlist/features/lists/presentation/edit_item_dialog.dart';
 import 'package:promptlist/features/lists/presentation/list_providers.dart';
 import 'package:promptlist/features/lists/presentation/move_to_section_dialog.dart';
@@ -15,6 +21,7 @@ import 'package:promptlist/features/templates/presentation/template_providers.da
 enum _ListMenuAction {
   rename,
   addSection,
+  aiModify,
   clearCompleted,
   saveAsTemplate,
   delete,
@@ -52,6 +59,71 @@ class ListDetailScreen extends ConsumerWidget {
     await ref
         .read(sectionRepositoryProvider)
         .createSection(listId: listId, title: title);
+  }
+
+  Future<void> _askAiToModify(
+    BuildContext context,
+    WidgetRef ref,
+    ListRecord record,
+  ) async {
+    final instruction = await showAiModifyListDialog(context);
+    if (instruction == null || !context.mounted) return;
+
+    final snapshot = await buildListSnapshot(
+      list: record,
+      sectionRepository: ref.read(sectionRepositoryProvider),
+      itemRepository: ref.read(listItemRepositoryProvider),
+    );
+    if (!context.mounted) return;
+
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const AlertDialog(
+        content: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+            SizedBox(width: 16),
+            Text('Asking AI...'),
+          ],
+        ),
+      ),
+    );
+
+    final service = ref.read(listGenerationServiceProvider);
+    final result = await service.modifyList(
+      snapshot: snapshot,
+      instruction: instruction,
+    );
+
+    if (!context.mounted) return;
+    Navigator.of(context).pop(); // dismiss the loading dialog
+
+    switch (result) {
+      case AiGenerationSuccess(:final list):
+        final accepted = await Navigator.of(context).push<GeneratedList>(
+          MaterialPageRoute(
+            builder: (_) => GeneratedListPreviewScreen(
+              initial: list,
+              title: 'Review AI changes',
+              acceptLabel: (n) => 'Apply changes ($n item${n == 1 ? '' : 's'})',
+            ),
+          ),
+        );
+        if (!context.mounted || accepted == null) return;
+        // TASK-052 applies `accepted` back into this list; for now,
+        // acknowledge acceptance without changing anything yet.
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text('Changes accepted.')));
+      case AiGenerationError(:final failure):
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(failure.message)));
+    }
   }
 
   Future<void> _clearCompleted(BuildContext context, WidgetRef ref) async {
@@ -142,6 +214,8 @@ class ListDetailScreen extends ConsumerWidget {
                         _rename(context, ref, record);
                       case _ListMenuAction.addSection:
                         _addSection(context, ref);
+                      case _ListMenuAction.aiModify:
+                        _askAiToModify(context, ref, record);
                       case _ListMenuAction.clearCompleted:
                         _clearCompleted(context, ref);
                       case _ListMenuAction.saveAsTemplate:
@@ -158,6 +232,10 @@ class ListDetailScreen extends ConsumerWidget {
                     PopupMenuItem(
                       value: _ListMenuAction.addSection,
                       child: Text('Add section'),
+                    ),
+                    PopupMenuItem(
+                      value: _ListMenuAction.aiModify,
+                      child: Text('Ask AI to change this list'),
                     ),
                     PopupMenuItem(
                       value: _ListMenuAction.clearCompleted,
