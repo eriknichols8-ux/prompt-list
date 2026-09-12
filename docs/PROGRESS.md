@@ -4,6 +4,64 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-063 complete (Milestone 6 finished)
+
+**Done:** Found the real gap immediately: `PromptListApp` had a
+`theme` but no `darkTheme` at all. Without one, `MaterialApp` never
+switches away from the light `ThemeData` regardless of the platform
+setting -- `themeMode` defaulting to `ThemeMode.system` has no effect
+if there's nothing to switch *to*. The app was not following the
+system theme at all before this task, in either direction.
+
+Before writing any new code, grepped `lib/` for hard-coded
+`Color(0x...)`/`Colors.*`/`.withOpacity` usage to check "no hard-coded
+colors break contrast": found exactly one hit, the seed color itself
+in `app.dart`. Every other screen already reads colors exclusively
+through `Theme.of(context).colorScheme.*`, so once a real dark
+`ColorScheme` exists, the whole app adapts automatically with zero
+further changes needed anywhere else.
+
+Added `darkTheme: ThemeData(useMaterial3: true, colorScheme:
+ColorScheme.fromSeed(seedColor: _seedColor, brightness:
+Brightness.dark))`, reusing the exact same terracotta seed as the
+light theme. Material 3's `fromSeed` dark generation is a proper
+perceptually-based tonal palette, not a naive RGB inversion of the
+light scheme, which is what "deliberately designed, not mechanically
+inverted" (per `CLAUDE.md`) actually calls for -- confirmed visually
+on the Android emulator (`adb shell cmd uimode night yes`): a warm
+dark brown/terracotta background, not flat gray, with the same accent
+character as the light theme. Left `themeMode` at its default
+(`ThemeMode.system`) rather than setting it explicitly, since that
+default is exactly the desired behavior and there's no reason to
+override it.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (227/227 passing, up from 225). New tests in
+`app_test.dart`: forcing `tester.platformDispatcher
+.platformBrightnessTestValue` to `Brightness.light`/`Brightness.dark`
+and asserting `Theme.of(context).brightness` matches and the Lists
+screen (search field included) still renders --- the dark-mode test
+additionally asserts `colorScheme.onSurface != colorScheme.surface`,
+a concrete proxy for "text remains legible against its background"
+that would fail if `darkTheme` were ever accidentally removed or left
+identical to `theme`. Also manually verified on the Android emulator:
+toggled system dark mode and confirmed both the Lists home screen and
+`ListDetailScreen` (including a completed item's checkbox +
+strikethrough) re-rendered immediately in a deliberately warm dark
+palette with no contrast issues, with no app-side toggle needed.
+
+**Milestone 6 --- UX and Reliability is now complete**: search across
+list titles and item text, undo for the two destructive actions that
+previously had neither confirmation nor undo, an accessible
+(non-visual) alternative to drag-based item reordering, and a real,
+deliberately designed dark theme that the app now actually follows.
+
+**Next:** Milestone 7 --- Release Readiness, starting with TASK-070
+(critical integration flows) or TASK-071 (data migration safety) per
+`docs/PLAN.md`'s dependency ordering.
+
+---
+
 ## 2026-09-12 --- TASK-062 complete
 
 **Done:** Dispatched a research-only audit (grep-based, no code changes)

@@ -369,7 +369,7 @@ pass.
 
 **Dependencies:** TASK-034, TASK-046.
 
-### [ ] TASK-063 --- Dark mode/theme behavior
+### [x] TASK-063 --- Dark mode/theme behavior
 
 **Goal:** Support system theme cleanly.
 
