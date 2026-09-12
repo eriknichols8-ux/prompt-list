@@ -4,6 +4,46 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-016 complete
+
+**Done:** Added `ListItemRepository.reorderItem({listId, oldIndex,
+newIndex})`: fetches the list's current item order, does a plain
+`List.removeAt`/`insert`, then --- in one transaction --- rewrites
+*every* item's `sortOrder` to a fresh spaced sequence
+(1000, 2000, ...). This sidesteps `ARCHITECTURE.md`'s "normalize when
+gaps are exhausted" fallback entirely: since every reorder
+renormalizes the whole list, gaps can never shrink to begin with. This
+is deliberately the "alternative strategy...simpler and well tested"
+the doc allows, appropriate given typical list sizes stay small.
+Index semantics are final-list-position (post-removal), matching
+Flutter's `ReorderableListView.onReorderItem` (not the deprecated
+`onReorder`, which reports a pre-removal index the caller must
+adjust).
+
+`ListDetailScreen`'s item list is now a `ReorderableListView.builder`
+with default drag handles disabled in favor of an explicit trailing
+`Icons.drag_handle` (via `ReorderableDragStartListener`) placed after
+the delete button, keeping the checkbox/text/delete row layout
+unchanged from TASK-014/015.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (51/51 passing). New `reorderItem` repository tests cover every
+case `TESTING.md` calls out: move first→last, last→first,
+middle→middle, repeated reorders (asserts final order *and* that
+resulting sort-order values stay strictly increasing with no
+duplicates), reordering after a deletion, a single-item list
+(no-op), and that the new order survives a fresh repository instance
+reading the same database. Added one widget test driving an actual
+drag gesture on the handle; a plain `tester.drag()` (no intermediate
+pumps) never triggered the reorder, so it uses
+`tester.startGesture`/`moveBy`/pump/`up` instead --- worth remembering
+for any future `ReorderableListView` test.
+
+**Next:** TASK-017 --- list management polish (rename, delete with
+confirmation/undo, clear completed, empty-list state).
+
+---
+
 ## 2026-09-12 --- TASK-015 complete
 
 **Done:** Added `ListItemRepository.setItemCompleted` (sets `completed`

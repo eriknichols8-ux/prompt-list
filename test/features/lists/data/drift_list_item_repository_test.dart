@@ -133,6 +133,108 @@ void main() {
     });
   });
 
+  group('reorderItem', () {
+    Future<List<String>> orderedContents() async {
+      final items = await repository.watchItems(listId).first;
+      return items.map((item) => item.content).toList();
+    }
+
+    test('move first to last', () async {
+      await repository.addItem(listId: listId, text: 'A');
+      await repository.addItem(listId: listId, text: 'B');
+      await repository.addItem(listId: listId, text: 'C');
+
+      await repository.reorderItem(listId: listId, oldIndex: 0, newIndex: 2);
+
+      expect(await orderedContents(), ['B', 'C', 'A']);
+    });
+
+    test('move last to first', () async {
+      await repository.addItem(listId: listId, text: 'A');
+      await repository.addItem(listId: listId, text: 'B');
+      await repository.addItem(listId: listId, text: 'C');
+
+      await repository.reorderItem(listId: listId, oldIndex: 2, newIndex: 0);
+
+      expect(await orderedContents(), ['C', 'A', 'B']);
+    });
+
+    test('move middle to middle', () async {
+      await repository.addItem(listId: listId, text: 'A');
+      await repository.addItem(listId: listId, text: 'B');
+      await repository.addItem(listId: listId, text: 'C');
+      await repository.addItem(listId: listId, text: 'D');
+
+      await repository.reorderItem(listId: listId, oldIndex: 1, newIndex: 2);
+
+      expect(await orderedContents(), ['A', 'C', 'B', 'D']);
+    });
+
+    test('repeated reorders do not corrupt ordering', () async {
+      await repository.addItem(listId: listId, text: 'A');
+      await repository.addItem(listId: listId, text: 'B');
+      await repository.addItem(listId: listId, text: 'C');
+
+      // [A,B,C] -> move A to the end -> [B,C,A]
+      await repository.reorderItem(listId: listId, oldIndex: 0, newIndex: 2);
+      // [B,C,A] -> move A (index 2) to the front -> [A,B,C]
+      await repository.reorderItem(listId: listId, oldIndex: 2, newIndex: 0);
+      // [A,B,C] -> move B (index 1) to the front -> [B,A,C]
+      await repository.reorderItem(listId: listId, oldIndex: 1, newIndex: 0);
+
+      expect(await orderedContents(), ['B', 'A', 'C']);
+
+      final sortOrders = (await repository.watchItems(listId).first)
+          .map((item) => item.sortOrder)
+          .toList();
+      final ascending = List<int>.from(sortOrders)..sort();
+      expect(
+        sortOrders,
+        ascending,
+        reason: 'sort order must match display order',
+      );
+      expect(
+        sortOrders.toSet(),
+        hasLength(3),
+        reason: 'no duplicate sort orders',
+      );
+    });
+
+    test(
+      'reordering after a deletion keeps the remaining items in order',
+      () async {
+        final a = await repository.addItem(listId: listId, text: 'A');
+        await repository.addItem(listId: listId, text: 'B');
+        await repository.addItem(listId: listId, text: 'C');
+        await repository.deleteItem(a.id);
+
+        await repository.reorderItem(listId: listId, oldIndex: 1, newIndex: 0);
+
+        expect(await orderedContents(), ['C', 'B']);
+      },
+    );
+
+    test('reordering a single-item list is a no-op', () async {
+      await repository.addItem(listId: listId, text: 'A');
+
+      await repository.reorderItem(listId: listId, oldIndex: 0, newIndex: 0);
+
+      expect(await orderedContents(), ['A']);
+    });
+
+    test('new order persists across a fresh query', () async {
+      await repository.addItem(listId: listId, text: 'A');
+      await repository.addItem(listId: listId, text: 'B');
+      await repository.reorderItem(listId: listId, oldIndex: 0, newIndex: 1);
+
+      final reloaded = await DriftListItemRepository(database)
+          .watchItems(listId)
+          .first;
+
+      expect(reloaded.map((item) => item.content).toList(), ['B', 'A']);
+    });
+  });
+
   group('watchItems', () {
     test('emits items for the list in sort order', () async {
       final emissions = <List<String>>[];

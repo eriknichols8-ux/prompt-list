@@ -151,6 +151,62 @@ void main() {
     expect(findLabel().style?.decoration, isNot(TextDecoration.lineThrough));
   });
 
+  driftTestWidgets('dragging the handle reorders items', (tester) async {
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-1',
+            sectionId: 'section-1',
+            content: 'Milk',
+            sortOrder: 1000,
+            createdAt: DateTime.now(),
+          ),
+        );
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-2',
+            sectionId: 'section-1',
+            content: 'Eggs',
+            sortOrder: 2000,
+            createdAt: DateTime.now(),
+          ),
+        );
+
+    await pumpDetailScreen(tester);
+
+    final tiles = find.byType(ListTile);
+    expect(
+      tester.getTopLeft(tiles.at(0)).dy,
+      lessThan(tester.getTopLeft(tiles.at(1)).dy),
+    );
+
+    // ReorderableListView needs pumped frames between pointer moves to
+    // register the swap; a single tester.drag() call (no intermediate
+    // pumps) does not trigger a reorder.
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byIcon(Icons.drag_handle).first),
+    );
+    await tester.pump(const Duration(milliseconds: 100));
+    await gesture.moveBy(const Offset(0, 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    await gesture.moveBy(const Offset(0, 100));
+    await tester.pump(const Duration(milliseconds: 100));
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    final texts = tester
+        .widgetList<Text>(
+          find.descendant(of: tiles, matching: find.byType(Text)),
+        )
+        .map((t) => t.data)
+        .whereType<String>()
+        .toList();
+    expect(texts, ['Eggs', 'Milk']);
+  });
+
   driftTestWidgets('deleting an item removes it from the list', (tester) async {
     await database
         .into(database.listItems)

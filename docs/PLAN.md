@@ -118,7 +118,7 @@ state transitions.
 
 **Dependencies:** TASK-014.
 
-### [ ] TASK-016 --- Drag-and-drop item ordering
+### [x] TASK-016 --- Drag-and-drop item ordering
 
 **Goal:** Allow persistent manual ordering.
 

@@ -14,24 +14,34 @@ class DriftListItemRepository implements ListItemRepository {
   final AppDatabase _db;
   final String Function() _generateId;
 
+  List<Join<HasResultSet, dynamic>> _sectionJoin() => [
+    innerJoin(_db.sections, _db.sections.id.equalsExp(_db.listItems.sectionId)),
+  ];
+
   @override
   Stream<List<ListItemRecord>> watchItems(String listId) {
-    final query =
-        _db.select(_db.listItems).join([
-            innerJoin(
-              _db.sections,
-              _db.sections.id.equalsExp(_db.listItems.sectionId),
-            ),
-          ])
-          ..where(_db.sections.listId.equals(listId))
-          ..orderBy([
-            OrderingTerm.asc(_db.sections.sortOrder),
-            OrderingTerm.asc(_db.listItems.sortOrder),
-          ]);
+    final query = _db.select(_db.listItems).join(_sectionJoin())
+      ..where(_db.sections.listId.equals(listId))
+      ..orderBy([
+        OrderingTerm.asc(_db.sections.sortOrder),
+        OrderingTerm.asc(_db.listItems.sortOrder),
+      ]);
 
     return query.watch().map(
       (rows) => rows.map((row) => row.readTable(_db.listItems)).toList(),
     );
+  }
+
+  Future<List<ListItemRecord>> _fetchOrderedItems(String listId) async {
+    final query = _db.select(_db.listItems).join(_sectionJoin())
+      ..where(_db.sections.listId.equals(listId))
+      ..orderBy([
+        OrderingTerm.asc(_db.sections.sortOrder),
+        OrderingTerm.asc(_db.listItems.sortOrder),
+      ]);
+
+    final rows = await query.get();
+    return rows.map((row) => row.readTable(_db.listItems)).toList();
   }
 
   @override
@@ -112,5 +122,26 @@ class DriftListItemRepository implements ListItemRepository {
     await (_db.delete(
       _db.listItems,
     )..where((tbl) => tbl.id.equals(itemId))).go();
+  }
+
+  @override
+  Future<void> reorderItem({
+    required String listId,
+    required int oldIndex,
+    required int newIndex,
+  }) async {
+    await _db.transaction(() async {
+      final items = await _fetchOrderedItems(listId);
+      final moved = items.removeAt(oldIndex);
+      items.insert(newIndex, moved);
+
+      for (var i = 0; i < items.length; i++) {
+        await (_db.update(
+          _db.listItems,
+        )..where((tbl) => tbl.id.equals(items[i].id))).write(
+          ListItemsCompanion(sortOrder: Value((i + 1) * _sortOrderStep)),
+        );
+      }
+    });
   }
 }

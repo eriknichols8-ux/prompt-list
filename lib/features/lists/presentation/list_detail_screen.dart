@@ -4,8 +4,9 @@ import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/features/lists/presentation/edit_item_dialog.dart';
 import 'package:promptlist/features/lists/presentation/list_providers.dart';
 
-/// Shows a single list: its items, with add/edit/delete/complete.
-/// Ordering and sections are built out starting in TASK-016.
+/// Shows a single list: its items, with add/edit/delete/complete and
+/// drag-and-drop reordering. Sections are built out starting in
+/// Milestone 2.
 class ListDetailScreen extends ConsumerWidget {
   const ListDetailScreen({required this.listId, super.key});
 
@@ -87,6 +88,16 @@ class _ItemsBodyState extends ConsumerState<_ItemsBody> {
         .setItemCompleted(itemId: item.id, completed: !item.completed);
   }
 
+  Future<void> _reorder(int oldIndex, int newIndex) {
+    return ref
+        .read(listItemRepositoryProvider)
+        .reorderItem(
+          listId: widget.listId,
+          oldIndex: oldIndex,
+          newIndex: newIndex,
+        );
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = ref.watch(itemsProvider(widget.listId));
@@ -97,13 +108,16 @@ class _ItemsBodyState extends ConsumerState<_ItemsBody> {
           child: items.when(
             data: (items) => items.isEmpty
                 ? const Center(child: Text('No items yet. Add one below.'))
-                : ListView.builder(
+                : ReorderableListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),
+                    buildDefaultDragHandles: false,
                     itemCount: items.length,
+                    onReorderItem: _reorder,
                     itemBuilder: (context, index) {
                       final item = items[index];
                       final theme = Theme.of(context);
                       return ListTile(
+                        key: ValueKey(item.id),
                         leading: Checkbox(
                           value: item.completed,
                           onChanged: (_) => _toggleCompleted(item),
@@ -118,10 +132,22 @@ class _ItemsBodyState extends ConsumerState<_ItemsBody> {
                               : theme.textTheme.bodyLarge,
                         ),
                         onTap: () => _editItem(item),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete_outline),
-                          tooltip: 'Delete item',
-                          onPressed: () => _deleteItem(item),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              tooltip: 'Delete item',
+                              onPressed: () => _deleteItem(item),
+                            ),
+                            ReorderableDragStartListener(
+                              index: index,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 4),
+                                child: Icon(Icons.drag_handle),
+                              ),
+                            ),
+                          ],
                         ),
                       );
                     },

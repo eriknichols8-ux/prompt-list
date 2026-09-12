@@ -41,4 +41,18 @@ abstract interface class ListItemRepository {
 
   /// Deletes the item identified by [itemId].
   Future<void> deleteItem(String itemId);
+
+  /// Moves the item at [oldIndex] (within [listId]'s current
+  /// [watchItems] order) to [newIndex] in the resulting list, and
+  /// persists the new order for every item in the list.
+  ///
+  /// Indexes use final-list-position semantics: after the move, the
+  /// item sits at [newIndex]. This matches Flutter's
+  /// `ReorderableListView.onReorderItem` (not the deprecated
+  /// `onReorder`, which reports a pre-removal `newIndex`).
+  Future<void> reorderItem({
+    required String listId,
+    required int oldIndex,
+    required int newIndex,
+  });
 }
