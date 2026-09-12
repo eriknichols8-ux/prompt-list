@@ -4,6 +4,35 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-003 complete (Milestone 0 finished)
+
+**Done:** Added `RootShell` (`lib/app/root_shell.dart`): a Material 3
+`NavigationBar` shell switching between Lists, Templates, and AI
+Create via an `IndexedStack` (preserves each tab's widget state).
+Settings is intentionally not a nav destination --- it is reached via a
+gear icon in the app bar and pushed as a normal route, keeping the
+primary three-tab workflow uncluttered per `PRODUCT_SPEC.md` section 4.
+Added placeholder screens under
+`lib/features/{lists,templates,ai_generation,settings}/presentation/`
+to be filled in by their respective later tasks. `PromptListApp` now
+hosts `RootShell` instead of a static placeholder.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (7/7 passing, covering initial destination, switching to each
+tab, selection persisting across a rebuild, and opening/closing
+Settings from the app bar). No Android/iOS emulator is available in
+this dev environment, so the shell was verified via the widget test
+suite rather than a manual on-device run; Windows/Chrome desktop
+targets were not added since only Android/iOS are in scope per
+`ARCHITECTURE.md`/ADR-001.
+
+**Milestone 0 --- Repository Foundation is now complete.**
+
+**Next:** Milestone 1 --- Local List Foundation, starting with
+TASK-010 (database schema v1).
+
+---
+
 ## 2026-09-12 --- TASK-002 complete
 
 **Done:** Added Riverpod (`flutter_riverpod`) and Drift/SQLite

@@ -41,7 +41,7 @@ are added. - A smoke test still passes.
 
 **Dependencies:** TASK-001.
 
-### [ ] TASK-003 --- App navigation and shell
+### [x] TASK-003 --- App navigation and shell
 
 **Goal:** Create primary navigation.
 
