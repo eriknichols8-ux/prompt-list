@@ -253,7 +253,7 @@ Cancel/back behavior is safe. - Uses fake AI service in widget tests.
 
 **Dependencies:** TASK-040, TASK-003.
 
-### [ ] TASK-043 --- Generated list preview
+### [x] TASK-043 --- Generated list preview
 
 **Goal:** Never persist AI output without review.
 

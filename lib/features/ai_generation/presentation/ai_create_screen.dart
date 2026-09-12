@@ -4,14 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/ai_generation_result.dart';
 import '../domain/generated_list.dart';
 import 'ai_generation_providers.dart';
+import 'generated_list_preview_screen.dart';
 
 /// "Describe the list you need" -- the entry point for AI-assisted list
 /// creation.
 ///
-/// This screen only captures the prompt, submits it, and shows a minimal
-/// summary of the result. Reviewing, editing, and explicitly accepting
-/// the generated content into a real list is the dedicated preview flow
-/// added in TASK-043/TASK-044; nothing here is persisted.
+/// This screen only captures and submits the prompt. A successful
+/// generation is immediately handed to [GeneratedListPreviewScreen] for
+/// review; nothing here is persisted, and accepting the preview is only
+/// wired up to the database starting in TASK-044.
 class AiCreateScreen extends ConsumerStatefulWidget {
   const AiCreateScreen({super.key});
 
@@ -23,7 +24,6 @@ class _AiCreateScreenState extends ConsumerState<AiCreateScreen> {
   final _controller = TextEditingController();
   bool _isGenerating = false;
   String? _errorMessage;
-  GeneratedList? _result;
 
   // Bumped on every submit/cancel so a late-arriving response from a
   // cancelled or superseded request is ignored instead of overwriting
@@ -46,7 +46,6 @@ class _AiCreateScreenState extends ConsumerState<AiCreateScreen> {
     setState(() {
       _isGenerating = true;
       _errorMessage = null;
-      _result = null;
     });
 
     final service = ref.read(listGenerationServiceProvider);
@@ -54,15 +53,32 @@ class _AiCreateScreenState extends ConsumerState<AiCreateScreen> {
 
     if (!mounted || requestId != _requestId) return;
 
-    setState(() {
-      _isGenerating = false;
-      switch (result) {
-        case AiGenerationSuccess(:final list):
-          _result = list;
-        case AiGenerationError(:final failure):
+    switch (result) {
+      case AiGenerationSuccess(:final list):
+        setState(() => _isGenerating = false);
+        await _showPreview(list);
+      case AiGenerationError(:final failure):
+        setState(() {
+          _isGenerating = false;
           _errorMessage = failure.message;
-      }
-    });
+        });
+    }
+  }
+
+  Future<void> _showPreview(GeneratedList list) async {
+    final accepted = await Navigator.of(context).push<GeneratedList>(
+      MaterialPageRoute(
+        builder: (_) => GeneratedListPreviewScreen(initial: list),
+      ),
+    );
+
+    if (!mounted || accepted == null) return;
+
+    // TASK-044 will persist `accepted` into the database and open the
+    // new list; for now, acknowledge acceptance and reset the prompt.
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('List accepted.')));
+    setState(() => _controller.clear());
   }
 
   void _cancelGeneration() {
@@ -72,21 +88,8 @@ class _AiCreateScreenState extends ConsumerState<AiCreateScreen> {
     });
   }
 
-  void _startOver() {
-    setState(() {
-      _result = null;
-      _errorMessage = null;
-      _controller.clear();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    final result = _result;
-    if (result != null) {
-      return _GeneratedSummary(list: result, onStartOver: _startOver);
-    }
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -140,44 +143,6 @@ class _AiCreateScreenState extends ConsumerState<AiCreateScreen> {
               child: const Text('Make me a list'),
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _GeneratedSummary extends StatelessWidget {
-  const _GeneratedSummary({required this.list, required this.onStartOver});
-
-  final GeneratedList list;
-  final VoidCallback onStartOver;
-
-  @override
-  Widget build(BuildContext context) {
-    final itemCount = list.sections.fold<int>(
-      0,
-      (sum, section) => sum + section.items.length,
-    );
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              list.title,
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text('$itemCount item${itemCount == 1 ? '' : 's'} generated'),
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: onStartOver,
-              child: const Text('Start over'),
-            ),
-          ],
-        ),
       ),
     );
   }

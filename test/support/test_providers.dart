@@ -13,6 +13,12 @@ import 'package:promptlist/core/database/database_provider.dart';
 /// `tearDown`/`addTearDown` itself. Without that, drift's internal
 /// stream-cleanup timer outlives the disposed widget tree and trips
 /// flutter_test's "no pending timers" assertion.
+///
+/// To add further provider overrides on top of this one, nest another
+/// `ProviderScope` around the returned widget rather than threading them
+/// through here -- Riverpod 3.x doesn't export the `Override` type
+/// publicly, so a `List<Override>` parameter can't be named from outside
+/// the package.
 Widget wrapWithProviders(Widget child, {required AppDatabase database}) {
   return ProviderScope(
     overrides: [appDatabaseProvider.overrideWithValue(database)],

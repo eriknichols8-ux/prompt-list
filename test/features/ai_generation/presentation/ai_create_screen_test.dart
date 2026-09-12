@@ -10,6 +10,7 @@ import 'package:promptlist/features/ai_generation/domain/generated_list.dart';
 import 'package:promptlist/features/ai_generation/domain/list_generation_service.dart';
 import 'package:promptlist/features/ai_generation/presentation/ai_create_screen.dart';
 import 'package:promptlist/features/ai_generation/presentation/ai_generation_providers.dart';
+import 'package:promptlist/features/ai_generation/presentation/generated_list_preview_screen.dart';
 
 /// A [ListGenerationService] whose response is controlled by an external
 /// [Completer], so tests can assert on the loading/cancel states before
@@ -63,9 +64,7 @@ void main() {
     expect(button.onPressed, isNull);
   });
 
-  testWidgets('successful generation shows a summary of the result', (
-    tester,
-  ) async {
+  testWidgets('successful generation opens the preview screen', (tester) async {
     await pumpScreen(tester, FakeListGenerationService());
 
     await tester.enterText(find.byType(TextField), 'Camping trip');
@@ -73,9 +72,10 @@ void main() {
     await tester.tap(find.text('Make me a list'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Camping trip'), findsOneWidget);
-    expect(find.text('3 items generated'), findsOneWidget);
-    expect(find.byType(TextField), findsNothing);
+    expect(find.byType(GeneratedListPreviewScreen), findsOneWidget);
+    expect(find.text('First item'), findsOneWidget);
+    expect(find.text('Second item'), findsOneWidget);
+    expect(find.text('Third item'), findsOneWidget);
   });
 
   testWidgets('shows a typed error message when generation fails', (
@@ -99,6 +99,7 @@ void main() {
     expect(find.text('The provider returned an error.'), findsOneWidget);
     // The prompt entry remains so the user can retry.
     expect(find.byType(TextField), findsOneWidget);
+    expect(find.byType(GeneratedListPreviewScreen), findsNothing);
   });
 
   testWidgets(
@@ -127,7 +128,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('1 item generated'), findsOneWidget);
+      expect(find.byType(GeneratedListPreviewScreen), findsOneWidget);
+      expect(find.text('Tent'), findsOneWidget);
     },
   );
 
@@ -150,7 +152,8 @@ void main() {
     expect(find.byType(TextField), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
 
-    // The cancelled request resolving later must not resurrect a result.
+    // The cancelled request resolving later must not resurrect a result
+    // or open a preview for it.
     pendingCompleter.complete(
       const AiGenerationSuccess(
         GeneratedList(
@@ -164,10 +167,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TextField), findsOneWidget);
-    expect(find.text('1 item generated'), findsNothing);
+    expect(find.byType(GeneratedListPreviewScreen), findsNothing);
   });
 
-  testWidgets('start over returns to prompt entry and clears the field', (
+  testWidgets('accepting the preview returns to prompt entry and clears it', (
     tester,
   ) async {
     await pumpScreen(tester, FakeListGenerationService());
@@ -177,11 +180,31 @@ void main() {
     await tester.tap(find.text('Make me a list'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Start over'));
-    await tester.pump();
+    await tester.tap(find.text('Add to my lists (3 items)'));
+    await tester.pumpAndSettle();
 
-    expect(find.byType(TextField), findsOneWidget);
+    expect(find.byType(GeneratedListPreviewScreen), findsNothing);
+    expect(find.text('List accepted.'), findsOneWidget);
     final textField = tester.widget<TextField>(find.byType(TextField));
     expect(textField.controller!.text, isEmpty);
   });
+
+  testWidgets(
+    'cancelling the preview returns to prompt entry with the prompt intact',
+    (tester) async {
+      await pumpScreen(tester, FakeListGenerationService());
+
+      await tester.enterText(find.byType(TextField), 'Camping trip');
+      await tester.pump();
+      await tester.tap(find.text('Make me a list'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.close));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GeneratedListPreviewScreen), findsNothing);
+      final textField = tester.widget<TextField>(find.byType(TextField));
+      expect(textField.controller!.text, 'Camping trip');
+    },
+  );
 }

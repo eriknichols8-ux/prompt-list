@@ -4,6 +4,69 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-043 complete
+
+**Done:** Added `GeneratedListPreviewScreen`
+(`lib/features/ai_generation/presentation/generated_list_preview_screen.dart`),
+the mandatory review step between AI generation and a real list. It
+takes an in-memory `GeneratedList` and renders an editable title
+field plus every section/item; each item has a remove button
+(`Icons.remove_circle_outline`, tooltip "Remove") that deletes it from
+local widget state only. The bottom bar's "Add to my lists (N items)"
+button is disabled once every item has been removed and otherwise
+pops the route with a rebuilt `GeneratedList` (trimmed title, falling
+back to the original if cleared blank; sections with zero remaining
+items dropped). The app-bar close icon (tooltip "Cancel") pops with
+`null`, discarding every edit. Critically, this widget has **no**
+dependency on any repository or database provider at all --- it is
+purely an in-memory editor, which is what makes "no persistence
+before acceptance" true by construction rather than by convention.
+
+`AiCreateScreen` (TASK-042) now pushes this screen immediately on a
+successful generation instead of showing the old inline summary
+stub, and awaits its result: `null` (cancelled) leaves the prompt
+text untouched for editing/retry, while an accepted `GeneratedList`
+clears the prompt and shows a "List accepted." `SnackBar`. Turning an
+accepted result into real list/section/item rows is explicitly
+deferred to TASK-044 and called out in a code comment at the
+acceptance call site, so the next task has an obvious hook rather
+than a stub to reverse-engineer.
+
+`test/support/test_providers.dart`'s `wrapWithProviders` was
+considered for an `overrides` passthrough parameter to combine a test
+database with other provider overrides, but Riverpod 3.4.3 doesn't
+publicly export the `Override` type (confirmed by reading the
+package source: `flutter_riverpod.dart` and `riverpod.dart` both curate
+their exports and omit it), so a `List<Override>` parameter can't be
+named from outside the package. Documented the working alternative
+instead (nest a second `ProviderScope` around the wrapped widget) and
+left the helper's signature unchanged.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (169/169 passing, up from 161). New test files:
+`generated_list_preview_screen_test.dart` (shows title/sections/items;
+removing an item hides it and updates the count; accept is disabled
+at zero items; accepting returns the edited title with removed items
+dropped and empty sections filtered out; cancelling pops `null` and
+discards edits) and `ai_create_no_persist_test.dart`, which drives the
+full prompt -> generate -> preview flow against a real in-memory
+`AppDatabase` and asserts `lists`/`sections`/`listItems` all stay
+empty after both cancelling and accepting --- the explicit
+no-persist-before-accept test this task's acceptance criteria call
+for. Updated `ai_create_screen_test.dart` for the new push-based flow
+(preview screen assertions instead of the old inline-summary text).
+Also manually exercised the full flow on the Android emulator: entered
+a prompt, reviewed the generated items, removed one, edited nothing
+further, and confirmed accepting returned to a cleared prompt screen
+with a "List accepted." confirmation.
+
+**Next:** TASK-044 --- accept AI list into local database (turn an
+accepted `GeneratedList` into real `List`/`Section`/`ListItem` rows
+atomically via the existing repositories, then behave like a normal
+list from that point on).
+
+---
+
 ## 2026-09-12 --- TASK-042 complete
 
 **Done:** Replaced the `AiCreateScreen` placeholder with a real prompt
