@@ -63,6 +63,11 @@ abstract interface class ListItemRepository {
   /// Deletes the item identified by [itemId].
   Future<void> deleteItem(String itemId);
 
+  /// Re-inserts [item] exactly as it was --- same id, section, text,
+  /// sort order, and completion --- for undoing [deleteItem] or
+  /// [clearCompleted]. Fails if [item]'s section no longer exists.
+  Future<void> restoreItem(ListItemRecord item);
+
   /// Deletes every completed item in [listId].
   Future<void> clearCompleted(String listId);
 

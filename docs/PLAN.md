@@ -347,7 +347,7 @@ Tests cover matching and no-result states.
 
 **Dependencies:** TASK-017.
 
-### [ ] TASK-061 --- Undo for common destructive actions
+### [x] TASK-061 --- Undo for common destructive actions
 
 **Goal:** Reduce accidental data loss.
 

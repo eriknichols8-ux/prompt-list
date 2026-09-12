@@ -229,6 +229,37 @@ void main() {
     expect(find.text('No items yet. Add one below.'), findsOneWidget);
   });
 
+  driftTestWidgets('deleting an item can be undone', (tester) async {
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-1',
+            sectionId: 'section-1',
+            content: 'Milk',
+            sortOrder: 1000,
+            createdAt: DateTime.now(),
+            completed: const Value(true),
+          ),
+        );
+
+    await pumpDetailScreen(tester);
+    await tester.tap(find.byIcon(Icons.delete_outline));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Milk'), findsNothing);
+    expect(find.text('Deleted "Milk"'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Milk'), findsOneWidget);
+    final restored = await (database.select(
+      database.listItems,
+    )..where((tbl) => tbl.id.equals('item-1'))).getSingle();
+    expect(restored.completed, isTrue);
+  });
+
   driftTestWidgets('renaming a list via the menu updates its title', (
     tester,
   ) async {
@@ -290,6 +321,49 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Milk'), findsNothing);
+    expect(find.text('Eggs'), findsOneWidget);
+  });
+
+  driftTestWidgets('clearing completed can be undone', (tester) async {
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-1',
+            sectionId: 'section-1',
+            content: 'Milk',
+            sortOrder: 1000,
+            createdAt: DateTime.now(),
+            completed: const Value(true),
+          ),
+        );
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-2',
+            sectionId: 'section-1',
+            content: 'Eggs',
+            sortOrder: 2000,
+            createdAt: DateTime.now(),
+          ),
+        );
+
+    await pumpDetailScreen(tester);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear completed'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Milk'), findsNothing);
+    expect(find.text('Cleared 1 item'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Milk'), findsOneWidget);
     expect(find.text('Eggs'), findsOneWidget);
   });
 

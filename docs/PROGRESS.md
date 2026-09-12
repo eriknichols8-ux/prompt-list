@@ -4,6 +4,53 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-061 complete
+
+**Done:** Audited every destructive action in the app against "supports
+undo or confirmation according to UX choice": delete list already had
+both (confirm + undo, from TASK-017); delete section and delete
+template already had confirm dialogs, which is sufficient friction for
+those comparatively deliberate, less-frequent actions, so both were
+left as-is rather than adding undo everywhere for its own sake. The
+two genuine gaps were **delete item** (had neither confirm nor undo,
+despite being the single most frequent destructive action in a
+checklist app --- a confirm dialog on every single-item delete would
+be worse friction than a single mis-tap deserves, so undo is the
+better fit) and **clear completed** (had confirm but no way back for
+what's often several items at once).
+
+Added `ListItemRepository.restoreItem(ListItemRecord item)` ---
+re-inserts the exact row via Drift's generated `item.toCompanion(false)`,
+preserving id, section, text, sort order, and completion exactly, so
+"undo restores correct order/state" holds by construction rather than
+by re-deriving a best guess. Wired into `list_detail_screen.dart`:
+`_ItemRow._deleteItem` now captures the repository and
+`ScaffoldMessenger` before deleting, then shows `Deleted "<text>"`
+with an `Undo` action calling `restoreItem`. `_clearCompleted` now
+captures the full list of about-to-be-cleared items (via `getItems`)
+before calling `clearCompleted`, then shows `Cleared N item(s)` with
+`Undo` restoring every one of them.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (224/224 passing, up from 219). New `restoreItem`
+group in `drift_list_item_repository_test.dart` (3 tests): re-inserts
+with exact id/section/sort-order; a restored completed item stays
+completed (with `completedAt` intact); restoring alongside other items
+preserves their relative order. New widget tests in
+`list_detail_screen_test.dart`: deleting an item can be undone (checks
+both that it reappears and that its completed state is preserved), and
+clearing completed can be undone (both items are restored). Also
+manually verified on the Android emulator: deleted "Second item" from a
+3-item list, saw "Deleted "Second item"" with an Undo action, tapped
+Undo, and confirmed it reappeared in its original middle position with
+its checkbox state intact.
+
+**Next:** TASK-062 --- accessibility and interaction polish (semantics/
+labels, touch targets, text scaling, completed-state not conveyed by
+color alone, accessible reorder alternative).
+
+---
+
 ## 2026-09-12 --- TASK-060 complete (Milestone 6 started)
 
 **Done:** `docs/PRODUCT_SPEC.md` has no search section to implement

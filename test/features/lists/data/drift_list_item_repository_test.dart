@@ -216,6 +216,53 @@ void main() {
     });
   });
 
+  group('restoreItem', () {
+    test('re-inserts a deleted item with its exact id/text/order', () async {
+      final item = await repository.addItem(listId: listId, text: 'Milk');
+      await repository.deleteItem(item.id);
+
+      await repository.restoreItem(item);
+
+      final restored = await (database.select(
+        database.listItems,
+      )..where((tbl) => tbl.id.equals(item.id))).getSingle();
+      expect(restored.content, 'Milk');
+      expect(restored.sectionId, item.sectionId);
+      expect(restored.sortOrder, item.sortOrder);
+    });
+
+    test('restores a completed item as still completed', () async {
+      final item = await repository.addItem(listId: listId, text: 'Milk');
+      await repository.setItemCompleted(itemId: item.id, completed: true);
+      final completedItem = await (database.select(
+        database.listItems,
+      )..where((tbl) => tbl.id.equals(item.id))).getSingle();
+      await repository.deleteItem(item.id);
+
+      await repository.restoreItem(completedItem);
+
+      final restored = await (database.select(
+        database.listItems,
+      )..where((tbl) => tbl.id.equals(item.id))).getSingle();
+      expect(restored.completed, isTrue);
+      expect(restored.completedAt, isNotNull);
+    });
+
+    test('restoring alongside other items preserves relative order', () async {
+      final milk = await repository.addItem(listId: listId, text: 'Milk');
+      await repository.addItem(listId: listId, text: 'Eggs');
+      await repository.addItem(listId: listId, text: 'Bread');
+      await repository.deleteItem(milk.id);
+
+      await repository.restoreItem(milk);
+
+      final contents = (await repository.watchItems(listId).first)
+          .map((item) => item.content)
+          .toList();
+      expect(contents, ['Milk', 'Eggs', 'Bread']);
+    });
+  });
+
   group('clearCompleted', () {
     test('removes only completed items', () async {
       final milk = await repository.addItem(listId: listId, text: 'Milk');

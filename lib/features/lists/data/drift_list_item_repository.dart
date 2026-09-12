@@ -172,6 +172,11 @@ class DriftListItemRepository implements ListItemRepository {
   }
 
   @override
+  Future<void> restoreItem(ListItemRecord item) async {
+    await _db.into(_db.listItems).insert(item.toCompanion(false));
+  }
+
+  @override
   Future<void> clearCompleted(String listId) async {
     final sections = await (_db.select(
       _db.sections,

@@ -148,8 +148,31 @@ class ListDetailScreen extends ConsumerWidget {
       message: 'Completed items in this list will be removed.',
       confirmLabel: 'Clear',
     );
-    if (!confirmed) return;
-    await ref.read(listItemRepositoryProvider).clearCompleted(listId);
+    if (!confirmed || !context.mounted) return;
+
+    final itemRepository = ref.read(listItemRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    final cleared = (await itemRepository.getItems(listId))
+        .where((item) => item.completed)
+        .toList();
+    await itemRepository.clearCompleted(listId);
+    if (cleared.isEmpty) return;
+
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          'Cleared ${cleared.length} item${cleared.length == 1 ? '' : 's'}',
+        ),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () async {
+            for (final item in cleared) {
+              await itemRepository.restoreItem(item);
+            }
+          },
+        ),
+      ),
+    );
   }
 
   Future<void> _saveAsTemplate(
@@ -675,8 +698,19 @@ class _ItemRow extends ConsumerWidget {
         .editItemText(itemId: item.id, text: newText);
   }
 
-  Future<void> _deleteItem(WidgetRef ref) {
-    return ref.read(listItemRepositoryProvider).deleteItem(item.id);
+  Future<void> _deleteItem(BuildContext context, WidgetRef ref) async {
+    final repository = ref.read(listItemRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    await repository.deleteItem(item.id);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('Deleted "${item.content}"'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () => repository.restoreItem(item),
+        ),
+      ),
+    );
   }
 
   Future<void> _toggleCompleted(WidgetRef ref) {
@@ -727,7 +761,7 @@ class _ItemRow extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.delete_outline),
             tooltip: 'Delete item',
-            onPressed: () => _deleteItem(ref),
+            onPressed: () => _deleteItem(context, ref),
           ),
           ReorderableDragStartListener(
             index: index,
