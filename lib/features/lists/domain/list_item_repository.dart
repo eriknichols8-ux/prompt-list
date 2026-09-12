@@ -32,6 +32,13 @@ abstract interface class ListItemRepository {
   /// Throws [ListItemValidationException] if [text] is blank.
   Future<void> editItemText({required String itemId, required String text});
 
+  /// Sets the completion state of the item identified by [itemId],
+  /// stamping or clearing its completion timestamp to match.
+  Future<void> setItemCompleted({
+    required String itemId,
+    required bool completed,
+  });
+
   /// Deletes the item identified by [itemId].
   Future<void> deleteItem(String itemId);
 }

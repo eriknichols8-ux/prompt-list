@@ -4,8 +4,8 @@ import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/features/lists/presentation/edit_item_dialog.dart';
 import 'package:promptlist/features/lists/presentation/list_providers.dart';
 
-/// Shows a single list: its items, with add/edit/delete. Completion,
-/// ordering, and sections are built out starting in TASK-015.
+/// Shows a single list: its items, with add/edit/delete/complete.
+/// Ordering and sections are built out starting in TASK-016.
 class ListDetailScreen extends ConsumerWidget {
   const ListDetailScreen({required this.listId, super.key});
 
@@ -81,6 +81,12 @@ class _ItemsBodyState extends ConsumerState<_ItemsBody> {
     return ref.read(listItemRepositoryProvider).deleteItem(item.id);
   }
 
+  Future<void> _toggleCompleted(ListItemRecord item) {
+    return ref
+        .read(listItemRepositoryProvider)
+        .setItemCompleted(itemId: item.id, completed: !item.completed);
+  }
+
   @override
   Widget build(BuildContext context) {
     final items = ref.watch(itemsProvider(widget.listId));
@@ -96,8 +102,21 @@ class _ItemsBodyState extends ConsumerState<_ItemsBody> {
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final item = items[index];
+                      final theme = Theme.of(context);
                       return ListTile(
-                        title: Text(item.content),
+                        leading: Checkbox(
+                          value: item.completed,
+                          onChanged: (_) => _toggleCompleted(item),
+                        ),
+                        title: Text(
+                          item.content,
+                          style: item.completed
+                              ? theme.textTheme.bodyLarge?.copyWith(
+                                  decoration: TextDecoration.lineThrough,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                )
+                              : theme.textTheme.bodyLarge,
+                        ),
                         onTap: () => _editItem(item),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete_outline),

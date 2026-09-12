@@ -25,35 +25,41 @@ class DriftListRepository implements ListRepository {
 
   @override
   Stream<List<ListSummary>> watchListSummaries() {
-    return watchLists().asyncMap((lists) async {
-      final summaries = <ListSummary>[];
-      for (final list in lists) {
-        final total = await _countItems(list.id);
-        final completed = await _countItems(list.id, completedOnly: true);
-        summaries.add(
-          ListSummary(list: list, totalItems: total, completedItems: completed),
-        );
-      }
-      return summaries;
-    });
-  }
+    // A single query joining through sections/listItems so Drift's
+    // table-dependency tracking re-emits this stream on item changes
+    // (completion toggles included), not just list-row changes.
+    final totalItems = _db.listItems.id.count();
+    final completedItems = _db.listItems.id.count(
+      filter: _db.listItems.completed.equals(true),
+    );
 
-  Future<int> _countItems(String listId, {bool completedOnly = false}) async {
-    final countExpression = _db.listItems.id.count();
-    final query = _db.selectOnly(_db.listItems)
-      ..join([
-        innerJoin(
-          _db.sections,
-          _db.sections.id.equalsExp(_db.listItems.sectionId),
-        ),
-      ])
-      ..where(_db.sections.listId.equals(listId))
-      ..addColumns([countExpression]);
-    if (completedOnly) {
-      query.where(_db.listItems.completed.equals(true));
-    }
-    final row = await query.getSingle();
-    return row.read(countExpression) ?? 0;
+    final query =
+        _db.select(_db.lists).join([
+            leftOuterJoin(
+              _db.sections,
+              _db.sections.listId.equalsExp(_db.lists.id),
+            ),
+            leftOuterJoin(
+              _db.listItems,
+              _db.listItems.sectionId.equalsExp(_db.sections.id),
+            ),
+          ])
+          ..where(_db.lists.archivedAt.isNull())
+          ..groupBy([_db.lists.id])
+          ..orderBy([OrderingTerm.desc(_db.lists.updatedAt)])
+          ..addColumns([totalItems, completedItems]);
+
+    return query.watch().map(
+      (rows) => rows
+          .map(
+            (row) => ListSummary(
+              list: row.readTable(_db.lists),
+              totalItems: row.read(totalItems) ?? 0,
+              completedItems: row.read(completedItems) ?? 0,
+            ),
+          )
+          .toList(),
+    );
   }
 
   @override

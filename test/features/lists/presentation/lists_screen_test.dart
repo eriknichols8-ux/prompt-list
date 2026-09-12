@@ -90,6 +90,63 @@ void main() {
     expect(find.text('1/2 completed'), findsOneWidget);
   });
 
+  driftTestWidgets('progress updates when an item is completed', (
+    tester,
+  ) async {
+    final now = DateTime.now();
+    await database
+        .into(database.lists)
+        .insert(
+          ListsCompanion.insert(
+            id: 'list-1',
+            title: 'Groceries',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await database
+        .into(database.sections)
+        .insert(
+          SectionsCompanion.insert(
+            id: 'section-1',
+            listId: 'list-1',
+            sortOrder: 1000,
+          ),
+        );
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-1',
+            sectionId: 'section-1',
+            content: 'Milk',
+            sortOrder: 1000,
+            createdAt: now,
+          ),
+        );
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-2',
+            sectionId: 'section-1',
+            content: 'Eggs',
+            sortOrder: 2000,
+            createdAt: now,
+          ),
+        );
+
+    await pumpListsScreen(tester);
+    expect(find.text('0/2 completed'), findsOneWidget);
+
+    await (database.update(database.listItems)
+          ..where((tbl) => tbl.id.equals('item-1')))
+        .write(const ListItemsCompanion(completed: Value(true)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('1/2 completed'), findsOneWidget);
+  });
+
   driftTestWidgets('tapping a list opens its detail screen', (tester) async {
     final now = DateTime.now();
     await database

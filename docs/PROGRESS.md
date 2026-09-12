@@ -4,6 +4,47 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-015 complete
+
+**Done:** Added `ListItemRepository.setItemCompleted` (sets `completed`
+and stamps/clears `completedAt` together --- application code owns
+completion state, never the raw `completed` flag alone, per
+`AI_CONTRACT.md`'s later-relevant principle that persisted state is
+never set implicitly). `ListDetailScreen` items now have a leading
+`Checkbox` bound to that; completed items get a line-through and
+`onSurfaceVariant` color on their text (state is carried by the
+checkbox itself, not color alone).
+
+**A real reactivity gap found and fixed while testing "progress on the
+list screen updates":** `ListRepository.watchListSummaries()` (from
+TASK-012) was built as `watchLists().asyncMap(...)` doing a separate
+count query per list. Since `watchLists()` only watches the `lists`
+table, it never re-emitted when an item's `completed` flag changed
+elsewhere --- the Lists screen's progress bars would have silently gone
+stale the moment TASK-015 shipped completion toggling. Rewrote it as a
+single query joining `lists` --- `sections` --- `listItems` (left outer,
+so lists with zero items/sections still appear) with `groupBy` and
+`count(filter: ...)` aggregates; Drift's table-dependency tracking on
+`.watch()` now re-emits on changes to any of the three tables. Worth
+remembering generally: an `asyncMap` over one table's stream, doing
+further queries against other tables inside the map, will not react to
+changes in those other tables --- the reactive query has to actually
+reference every table whose changes should trigger a re-emit.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (43/43 passing). Added a `watchListSummaries` repository test
+that toggles an item's `completed` column directly (bypassing the
+repository) and confirms the stream re-emits with the new count ---
+this is what would have caught the gap above. Added a `ListsScreen`
+widget test doing the same at the UI layer (progress text updates from
+"0/2" to "1/2" after the underlying row changes) and a
+`ListDetailScreen` test covering check/uncheck toggling the checkbox
+and the strikethrough styling in both directions.
+
+**Next:** TASK-016 --- drag-and-drop item ordering.
+
+---
+
 ## 2026-09-12 --- TASK-014 complete
 
 **Done:** Added `ListItemRepository`/`DriftListItemRepository`

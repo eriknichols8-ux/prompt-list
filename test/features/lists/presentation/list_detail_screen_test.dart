@@ -115,6 +115,42 @@ void main() {
     expect(find.text('Milk'), findsNothing);
   });
 
+  driftTestWidgets('checking and unchecking an item toggles completion', (
+    tester,
+  ) async {
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-1',
+            sectionId: 'section-1',
+            content: 'Milk',
+            sortOrder: 1000,
+            createdAt: DateTime.now(),
+          ),
+        );
+
+    await pumpDetailScreen(tester);
+
+    Text findLabel() => tester.widget<Text>(find.text('Milk'));
+    Checkbox findCheckbox() => tester.widget<Checkbox>(find.byType(Checkbox));
+
+    expect(findCheckbox().value, isFalse);
+    expect(findLabel().style?.decoration, isNot(TextDecoration.lineThrough));
+
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+
+    expect(findCheckbox().value, isTrue);
+    expect(findLabel().style?.decoration, TextDecoration.lineThrough);
+
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+
+    expect(findCheckbox().value, isFalse);
+    expect(findLabel().style?.decoration, isNot(TextDecoration.lineThrough));
+  });
+
   driftTestWidgets('deleting an item removes it from the list', (tester) async {
     await database
         .into(database.listItems)

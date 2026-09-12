@@ -93,6 +93,21 @@ class DriftListItemRepository implements ListItemRepository {
   }
 
   @override
+  Future<void> setItemCompleted({
+    required String itemId,
+    required bool completed,
+  }) async {
+    await (_db.update(
+      _db.listItems,
+    )..where((tbl) => tbl.id.equals(itemId))).write(
+      ListItemsCompanion(
+        completed: Value(completed),
+        completedAt: Value(completed ? DateTime.now() : null),
+      ),
+    );
+  }
+
+  @override
   Future<void> deleteItem(String itemId) async {
     await (_db.delete(
       _db.listItems,

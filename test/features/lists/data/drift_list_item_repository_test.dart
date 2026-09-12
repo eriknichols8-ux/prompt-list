@@ -95,6 +95,34 @@ void main() {
     });
   });
 
+  group('setItemCompleted', () {
+    test('completing an item stamps completedAt', () async {
+      final item = await repository.addItem(listId: listId, text: 'Milk');
+      expect(item.completedAt, isNull);
+
+      await repository.setItemCompleted(itemId: item.id, completed: true);
+
+      final completed = await (database.select(
+        database.listItems,
+      )..where((tbl) => tbl.id.equals(item.id))).getSingle();
+      expect(completed.completed, isTrue);
+      expect(completed.completedAt, isNotNull);
+    });
+
+    test('uncompleting an item clears completedAt', () async {
+      final item = await repository.addItem(listId: listId, text: 'Milk');
+      await repository.setItemCompleted(itemId: item.id, completed: true);
+
+      await repository.setItemCompleted(itemId: item.id, completed: false);
+
+      final uncompleted = await (database.select(
+        database.listItems,
+      )..where((tbl) => tbl.id.equals(item.id))).getSingle();
+      expect(uncompleted.completed, isFalse);
+      expect(uncompleted.completedAt, isNull);
+    });
+  });
+
   group('deleteItem', () {
     test('removes the item', () async {
       final item = await repository.addItem(listId: listId, text: 'Milk');

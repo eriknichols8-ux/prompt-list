@@ -107,7 +107,7 @@ validation.
 
 **Dependencies:** TASK-013.
 
-### [ ] TASK-015 --- Complete and uncomplete items
+### [x] TASK-015 --- Complete and uncomplete items
 
 **Goal:** Track checklist completion.
 

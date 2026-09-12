@@ -154,4 +154,57 @@ void main() {
       },
     );
   });
+
+  group('watchListSummaries', () {
+    test('reports item totals and reacts to completion toggles', () async {
+      final list = await repository.createList(title: 'Groceries');
+      final section = await (database.select(
+        database.sections,
+      )..where((tbl) => tbl.listId.equals(list.id))).getSingle();
+      await database
+          .into(database.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: 'item-0',
+              sectionId: section.id,
+              content: 'Milk',
+              sortOrder: 1000,
+              createdAt: DateTime.now(),
+            ),
+          );
+      await database
+          .into(database.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: 'item-1',
+              sectionId: section.id,
+              content: 'Eggs',
+              sortOrder: 2000,
+              createdAt: DateTime.now(),
+            ),
+          );
+
+      final emissions = <(int, int)>[];
+      final subscription = repository.watchListSummaries().listen((summaries) {
+        final summary = summaries.single;
+        emissions.add((summary.totalItems, summary.completedItems));
+      });
+      addTearDown(subscription.cancel);
+
+      await pumpEventQueue();
+      expect(emissions.last, (2, 0));
+
+      await (database.update(database.listItems)
+            ..where((tbl) => tbl.id.equals('item-0')))
+          .write(const ListItemsCompanion(completed: Value(true)));
+      await pumpEventQueue();
+      expect(emissions.last, (2, 1));
+
+      await (database.update(database.listItems)
+            ..where((tbl) => tbl.id.equals('item-0')))
+          .write(const ListItemsCompanion(completed: Value(false)));
+      await pumpEventQueue();
+      expect(emissions.last, (2, 0));
+    });
+  });
 }
