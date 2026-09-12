@@ -243,7 +243,7 @@ payloads.
 
 **Dependencies:** TASK-040.
 
-### [ ] TASK-042 --- AI prompt screen
+### [x] TASK-042 --- AI prompt screen
 
 **Goal:** Capture the user's request.
 

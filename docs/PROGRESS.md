@@ -4,6 +4,56 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-042 complete
+
+**Done:** Replaced the `AiCreateScreen` placeholder with a real prompt
+capture flow ("Describe the list you need" per the AI UX direction in
+`CLAUDE.md`, not a chatbot-style interface). Added
+`listGenerationServiceProvider`
+(`lib/features/ai_generation/presentation/ai_generation_providers.dart`),
+a `Provider<ListGenerationService>` defaulting to
+`FakeListGenerationService` until TASK-045 wires a real adapter behind
+the same interface --- widget tests override it with their own
+scripted fake/controllable service, so nothing here depends on a live
+provider.
+
+`AiCreateScreen` is a `ConsumerStatefulWidget`: a multi-line `TextField`
+plus a "Make me a list" `FilledButton` whose `onPressed` is null
+whenever the trimmed prompt is empty or a request is already in
+flight (mirrors the existing `_canSubmit` pattern from
+`CreateListDialog`). Submitting increments a `_requestId` counter
+before awaiting `ListGenerationService.generateList`; the response is
+only applied if `mounted` and the id still matches, so a cancelled or
+superseded request can never resurrect stale state. While generating,
+the button is replaced by a spinner + "Cancel" (bumps `_requestId` and
+resets `_isGenerating`, discarding whatever the in-flight call
+eventually returns). A successful result shows a minimal inline
+summary (title + item count) with "Start over"; a failed result shows
+the typed `AiGenerationFailure.message` inline and leaves the prompt
+editable for retry. Nothing is persisted at any point in this
+screen --- reviewing/editing the generated content is the dedicated
+preview flow in TASK-043, which will replace this inline summary.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (161/161 passing, up from 153). New
+`test/features/ai_generation/presentation/ai_create_screen_test.dart`
+(7 tests) covers: submit disabled until non-blank text is entered,
+whitespace-only rejection, successful generation showing the summary,
+a typed error message on failure, the loading state blocking
+duplicate submission (using a `Completer`-backed
+`_ControllableGenerationService`), cancelling mid-generation
+discarding a result that resolves later, and "Start over" clearing
+the field. Also manually exercised the full flow on the Android
+emulator (`emulator-5554`, release build): entered "Camping trip",
+tapped "Make me a list", and confirmed the summary rendered "3 items
+generated" with a working "Start over" button.
+
+**Next:** TASK-043 --- generated list preview (show the generated
+title/sections/items for review, allow removing items and editing the
+title, and guarantee nothing is persisted before explicit acceptance).
+
+---
+
 ## 2026-09-12 --- TASK-041 complete
 
 **Done:** Added `GeneratedListValidator`
