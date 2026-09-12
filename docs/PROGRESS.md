@@ -4,6 +4,58 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-040 complete (Milestone 4 started)
+
+**Done:** Added the provider-independent AI generation contract under
+`lib/features/ai_generation/domain/`:
+
+-   `GeneratedItem` / `GeneratedSection` / `GeneratedList` --- plain,
+    hand-equality DTOs matching the canonical structure in
+    `AI_CONTRACT.md`. Deliberately separate from the persisted `Lists`
+    / `Sections` / `ListItems` Drift entities: nothing here has an id,
+    completion state, or sort order, since the app only assigns those
+    after explicit acceptance. The same shape is documented to be
+    reused for modification proposals in TASK-050, so no second DTO
+    set will be needed later.
+-   `AiGenerationFailureType` / `AiGenerationFailure` --- typed failure
+    categories (invalid prompt, network, timeout, rate limit, provider
+    error, invalid response, unknown) so TASK-046's UX work has
+    something more useful to branch on than a raw exception.
+-   `AiGenerationResult` --- a sealed `AiGenerationSuccess` /
+    `AiGenerationError` result type, so `ListGenerationService`
+    reports expected failures as data instead of throwing.
+-   `ListGenerationService` --- the abstract contract
+    (`generateList(prompt)`); a future OpenAI adapter (TASK-045)
+    implements it in the data layer, swapped in behind a Riverpod
+    provider. Nothing outside that future adapter will depend on a
+    concrete provider.
+-   `FakeListGenerationService` (`lib/features/ai_generation/data/`)
+    --- deterministic default implementation for tests (echoes the
+    trimmed prompt into a 3-item single-section list; rejects a blank
+    prompt) with an `onGenerate` override hook for scripting specific
+    success/failure scenarios in later widget tests (TASK-042/043).
+
+Did not add Riverpod provider wiring or the OpenAI dependency yet ---
+those belong to TASK-042 (prompt screen) and TASK-045 (real provider
+adapter) respectively; TASK-040 is domain-only per its acceptance
+criteria. Confirmed the `.env` file (holding the local OpenAI key)
+still exists locally and remains untouched/uncommitted; it isn't
+wired into any code yet.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (127/127 passing, up from 121). New tests:
+`test/features/ai_generation/domain/generated_list_test.dart` (value
+equality) and
+`test/features/ai_generation/data/fake_list_generation_service_test.dart`
+(deterministic default output, blank-prompt rejection, `onGenerate`
+override).
+
+**Next:** TASK-041 --- AI structured response validator (turn raw
+provider JSON into a validated `GeneratedList`, enforcing the size
+limits in `AI_CONTRACT.md`).
+
+---
+
 ## 2026-09-12 --- TASK-034 complete (Milestone 3 finished)
 
 **Done:** `TemplatesScreen` now groups templates under "Built-in" and

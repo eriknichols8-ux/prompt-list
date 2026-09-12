@@ -219,7 +219,7 @@ are safe. - Widget tests cover template management.
 
 ## Milestone 4 --- AI Generation Foundation
 
-### [ ] TASK-040 --- AI domain contract
+### [x] TASK-040 --- AI domain contract
 
 **Goal:** Define provider-independent generation models/interfaces.
 
