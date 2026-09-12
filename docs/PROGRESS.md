@@ -4,6 +4,68 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-060 complete (Milestone 6 started)
+
+**Done:** `docs/PRODUCT_SPEC.md` has no search section to implement
+against, so this task defined the behavior: a persistent search field
+at the top of the Lists home screen filters by list title OR any
+item's text (not just titles), since finding "which list has milk on
+it" is at least as useful as finding a list by name once there are
+more than a handful of lists.
+
+Added `ListRepository.searchLists(String query)` --- one-shot, not
+reactive, since search is a transient interaction rather than a
+persistent view worth keeping a live-filtered stream open for.
+`DriftListRepository`'s implementation: a blank query just returns
+`watchListSummaries().first` (identical unfiltered result); a
+non-blank query first computes the matching list-id set from two
+type-safe Drift queries (`title.contains(q)` on `lists`, and
+`content.contains(q)` on `listItems` joined to its section for the
+`listId`), then re-runs the exact same aggregate join/groupBy query
+`watchListSummaries()` already uses, just with an added
+`lists.id.isIn(matchingIds)` filter --- so item-count totals stay
+correct for the whole list, not just its matching items.
+`Expression<String>.contains` is Drift's own built-in helper
+(`LIKE '%...%'`, case-insensitive for the English alphabet, same as
+SQLite's native default); a known accepted limitation is that a
+literal `%` or `_` in a search query is interpreted as a SQL wildcard
+rather than a literal character, same as the underlying `contains`
+helper's own documented behavior --- not worth adding manual
+escaping for a personal checklist app's search box.
+
+`ListsScreen` became a `ConsumerStatefulWidget` holding the search
+`TextEditingController`/query string locally, watching
+`listSummariesProvider` when the (trimmed) query is blank and the new
+`searchListsProvider(query)` (a `FutureProvider.autoDispose.family`)
+otherwise. An empty non-blank-query result shows a new
+`_NoSearchResultsState` ("No matches for "..."") distinct from the
+existing "No lists yet" empty state, and a clear (×) button appears
+only while there's a query.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (219/219 passing, up from 208). New `searchLists`
+group in `drift_list_repository_test.dart` (7 tests): blank query
+returns everything; title match is case-insensitive; item-text match
+works even when the title doesn't match; totals stay correct when
+matching by item text; a query matching nothing returns empty; an
+archived list is excluded even if its title matches; a list matching
+both ways isn't duplicated. New tests in `lists_screen_test.dart` (4):
+search filters by title, filters by item text, shows the no-matches
+empty state, and clearing search restores the full list (also fixed
+an existing test's now-ambiguous `find.byType(TextField)` now that the
+screen always has its own search field, by scoping to the dialog).
+Also manually verified on the Android emulator: typed "second" and
+saw only the list containing a "Second item" entry; typed a
+nonsense query and saw the no-matches state; cleared it and got the
+full list back.
+
+**Next:** TASK-061 --- undo for common destructive actions (delete
+list already has undo via TASK-017; extend the same pattern to
+whichever other destructive actions still lack it, e.g. delete item,
+delete section, clear completed).
+
+---
+
 ## 2026-09-12 --- TASK-052 complete (Milestone 5 finished)
 
 **Done:** Added `ListRepository.applyGeneratedListModification({listId,

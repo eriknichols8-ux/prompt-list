@@ -174,7 +174,11 @@ void main() {
 
       await tester.tap(find.text('New list'));
       await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), 'Packing');
+      final dialogField = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      );
+      await tester.enterText(dialogField, 'Packing');
       await tester.pump();
       await tester.tap(find.text('Create'));
       await tester.pumpAndSettle();
@@ -188,4 +192,101 @@ void main() {
       expect(find.text('No items yet'), findsOneWidget);
     },
   );
+
+  Future<void> seedGroceriesAndPacking(AppDatabase database) async {
+    final now = DateTime.now();
+    await database
+        .into(database.lists)
+        .insert(
+          ListsCompanion.insert(
+            id: 'list-1',
+            title: 'Groceries',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+    await database
+        .into(database.sections)
+        .insert(
+          SectionsCompanion.insert(
+            id: 'section-1',
+            listId: 'list-1',
+            sortOrder: 1000,
+          ),
+        );
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-1',
+            sectionId: 'section-1',
+            content: 'Oat milk',
+            sortOrder: 1000,
+            createdAt: now,
+          ),
+        );
+    await database
+        .into(database.lists)
+        .insert(
+          ListsCompanion.insert(
+            id: 'list-2',
+            title: 'Packing',
+            createdAt: now,
+            updatedAt: now,
+          ),
+        );
+  }
+
+  driftTestWidgets('search filters lists by title', (tester) async {
+    await seedGroceriesAndPacking(database);
+    await pumpListsScreen(tester);
+
+    await tester.enterText(find.byType(TextField), 'groc');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Groceries'), findsOneWidget);
+    expect(find.text('Packing'), findsNothing);
+  });
+
+  driftTestWidgets('search filters lists by item text', (tester) async {
+    await seedGroceriesAndPacking(database);
+    await pumpListsScreen(tester);
+
+    await tester.enterText(find.byType(TextField), 'oat milk');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Groceries'), findsOneWidget);
+    expect(find.text('Packing'), findsNothing);
+  });
+
+  driftTestWidgets('shows a useful empty state for a search with no matches', (
+    tester,
+  ) async {
+    await seedGroceriesAndPacking(database);
+    await pumpListsScreen(tester);
+
+    await tester.enterText(find.byType(TextField), 'xyzzy');
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('No matches for "xyzzy"'), findsOneWidget);
+    expect(find.text('Groceries'), findsNothing);
+    expect(find.text('Packing'), findsNothing);
+  });
+
+  driftTestWidgets('clearing the search restores the full list', (
+    tester,
+  ) async {
+    await seedGroceriesAndPacking(database);
+    await pumpListsScreen(tester);
+
+    await tester.enterText(find.byType(TextField), 'groc');
+    await tester.pumpAndSettle();
+    expect(find.text('Packing'), findsNothing);
+
+    await tester.tap(find.byTooltip('Clear search'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Groceries'), findsOneWidget);
+    expect(find.text('Packing'), findsOneWidget);
+  });
 }

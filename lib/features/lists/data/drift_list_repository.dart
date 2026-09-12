@@ -72,6 +72,68 @@ class DriftListRepository implements ListRepository {
   }
 
   @override
+  Future<List<ListSummary>> searchLists(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      return watchListSummaries().first;
+    }
+
+    final titleMatches =
+        await (_db.select(_db.lists)..where(
+              (tbl) => tbl.archivedAt.isNull() & tbl.title.contains(trimmed),
+            ))
+            .map((list) => list.id)
+            .get();
+
+    final itemMatchRows = await (_db.select(_db.listItems).join([
+      innerJoin(
+        _db.sections,
+        _db.sections.id.equalsExp(_db.listItems.sectionId),
+      ),
+    ])..where(_db.listItems.content.contains(trimmed))).get();
+
+    final matchingIds = <String>{
+      ...titleMatches,
+      ...itemMatchRows.map((row) => row.readTable(_db.sections).listId),
+    };
+    if (matchingIds.isEmpty) return const [];
+
+    final totalItems = _db.listItems.id.count();
+    final completedItems = _db.listItems.id.count(
+      filter: _db.listItems.completed.equals(true),
+    );
+
+    final rows =
+        await (_db.select(_db.lists).join([
+                leftOuterJoin(
+                  _db.sections,
+                  _db.sections.listId.equalsExp(_db.lists.id),
+                ),
+                leftOuterJoin(
+                  _db.listItems,
+                  _db.listItems.sectionId.equalsExp(_db.sections.id),
+                ),
+              ])
+              ..where(
+                _db.lists.archivedAt.isNull() & _db.lists.id.isIn(matchingIds),
+              )
+              ..groupBy([_db.lists.id])
+              ..orderBy([OrderingTerm.desc(_db.lists.updatedAt)])
+              ..addColumns([totalItems, completedItems]))
+            .get();
+
+    return rows
+        .map(
+          (row) => ListSummary(
+            list: row.readTable(_db.lists),
+            totalItems: row.read(totalItems) ?? 0,
+            completedItems: row.read(completedItems) ?? 0,
+          ),
+        )
+        .toList();
+  }
+
+  @override
   Stream<ListRecord?> watchList(String id) {
     return (_db.select(
       _db.lists,

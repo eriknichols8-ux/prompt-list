@@ -27,6 +27,17 @@ abstract interface class ListRepository {
 
   Future<ListRecord?> getList(String id);
 
+  /// Non-archived lists (with progress) whose title or any item's text
+  /// contains [query] (case-insensitive for the English alphabet, per
+  /// SQLite's default `LIKE` behavior), ordered like
+  /// [watchListSummaries]. A blank [query] returns every non-archived
+  /// list, matching [watchListSummaries]'s unfiltered result.
+  ///
+  /// One-shot rather than reactive: search is a transient interaction,
+  /// not a persistent view, so re-running it per keystroke is simpler
+  /// than keeping a filtered stream alive.
+  Future<List<ListSummary>> searchLists(String query);
+
   /// Emits the list identified by [id] whenever it changes (including
   /// rename and archive/unarchive), or `null` if it does not exist.
   Stream<ListRecord?> watchList(String id);

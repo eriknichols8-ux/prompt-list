@@ -20,6 +20,14 @@ final listSummariesProvider = StreamProvider<List<ListSummary>>((ref) {
   return ref.watch(listRepositoryProvider).watchListSummaries();
 });
 
+/// One-shot search of lists by title/item text for a given query, for
+/// the Lists home screen's search field. `autoDispose` so results for
+/// past keystrokes don't linger in memory.
+final searchListsProvider = FutureProvider.autoDispose
+    .family<List<ListSummary>, String>((ref, query) {
+      return ref.watch(listRepositoryProvider).searchLists(query);
+    });
+
 /// A single list by ID, for the list detail screen. Reactive so the
 /// screen reflects renames and archive/unarchive without a manual
 /// refresh.

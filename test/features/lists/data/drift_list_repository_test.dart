@@ -706,4 +706,98 @@ void main() {
       expect(emissions.last, (2, 0));
     });
   });
+
+  group('searchLists', () {
+    Future<void> addItem(String sectionId, String id, String content) {
+      return database
+          .into(database.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: id,
+              sectionId: sectionId,
+              content: content,
+              sortOrder: 1000,
+              createdAt: DateTime.now(),
+            ),
+          );
+    }
+
+    Future<SectionRecord> firstSectionOf(String listId) {
+      return (database.select(
+        database.sections,
+      )..where((tbl) => tbl.listId.equals(listId))).getSingle();
+    }
+
+    test('a blank query returns every non-archived list', () async {
+      await repository.createList(title: 'Groceries');
+      await repository.createList(title: 'Packing');
+
+      final results = await repository.searchLists('   ');
+
+      expect(results.map((s) => s.list.title).toSet(), {
+        'Groceries',
+        'Packing',
+      });
+    });
+
+    test('matches a list by title, case-insensitively', () async {
+      await repository.createList(title: 'Groceries');
+      await repository.createList(title: 'Packing');
+
+      final results = await repository.searchLists('GROC');
+
+      expect(results, hasLength(1));
+      expect(results.single.list.title, 'Groceries');
+    });
+
+    test('matches a list by item text even when the title does not', () async {
+      final groceries = await repository.createList(title: 'Groceries');
+      final section = await firstSectionOf(groceries.id);
+      await addItem(section.id, 'item-milk', 'Oat milk');
+      await repository.createList(title: 'Packing');
+
+      final results = await repository.searchLists('oat milk');
+
+      expect(results, hasLength(1));
+      expect(results.single.list.title, 'Groceries');
+    });
+
+    test('still reports correct totals when matching by item text', () async {
+      final groceries = await repository.createList(title: 'Groceries');
+      final section = await firstSectionOf(groceries.id);
+      await addItem(section.id, 'item-milk', 'Milk');
+      await addItem(section.id, 'item-eggs', 'Eggs');
+
+      final results = await repository.searchLists('milk');
+
+      expect(results.single.totalItems, 2);
+    });
+
+    test('returns nothing for a query that matches no list or item', () async {
+      await repository.createList(title: 'Groceries');
+
+      final results = await repository.searchLists('xyzzy');
+
+      expect(results, isEmpty);
+    });
+
+    test('excludes an archived list even if its title matches', () async {
+      final list = await repository.createList(title: 'Groceries');
+      await repository.archiveList(list.id);
+
+      final results = await repository.searchLists('groceries');
+
+      expect(results, isEmpty);
+    });
+
+    test('a list matching in two ways is not duplicated', () async {
+      final list = await repository.createList(title: 'Milk run');
+      final section = await firstSectionOf(list.id);
+      await addItem(section.id, 'item-milk', 'Milk');
+
+      final results = await repository.searchLists('milk');
+
+      expect(results, hasLength(1));
+    });
+  });
 }

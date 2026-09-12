@@ -337,7 +337,7 @@ rollback/failure.
 
 ## Milestone 6 --- UX and Reliability
 
-### [ ] TASK-060 --- Search and basic organization
+### [x] TASK-060 --- Search and basic organization
 
 **Goal:** Make lists easier to find as data grows.
 
