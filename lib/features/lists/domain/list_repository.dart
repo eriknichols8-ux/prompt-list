@@ -1,5 +1,6 @@
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/features/lists/domain/list_summary.dart';
+import 'package:promptlist/features/templates/domain/template_repository.dart';
 
 /// Thrown when list input fails validation before it would be persisted.
 class ListValidationException implements Exception {
@@ -34,6 +35,15 @@ abstract interface class ListRepository {
   ///
   /// Throws [ListValidationException] if [title] is blank.
   Future<ListRecord> createList({required String title, String? description});
+
+  /// Creates a new, independent list by copying [template]'s structure:
+  /// title, description, sections, and items. Copied items always
+  /// start unchecked --- templates never carry completion state to
+  /// begin with (see `TemplateItems`) --- and everything gets fresh
+  /// IDs, so later editing the new list can never mutate the source
+  /// template. If [template] has no sections, the new list still gets
+  /// one default section, matching [createList].
+  Future<ListRecord> createListFromTemplate(TemplateWithSections template);
 
   /// Renames the list identified by [id] to [title].
   ///

@@ -186,7 +186,7 @@ rules. - Tests verify template loading.
 
 **Dependencies:** TASK-030.
 
-### [ ] TASK-032 --- Create list from template
+### [x] TASK-032 --- Create list from template
 
 **Goal:** Instantiate independent lists.
 

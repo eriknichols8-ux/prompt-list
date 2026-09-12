@@ -4,6 +4,44 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-032 complete
+
+**Done:** Added `ListRepository.createListFromTemplate(TemplateWithSections)`:
+takes an already-fetched template structure (not a template ID) so
+`ListRepository` doesn't need a live dependency on `TemplateRepository`
+--- just the plain read-only `TemplateWithSections` data shape. In one
+transaction it creates a new list (title/description copied) plus a
+fresh section per template section (fresh IDs throughout) and a fresh
+item per template item, always `completed: false`. A template with no
+sections still produces a normal, usable list with one default
+section, matching `createList`.
+
+Built out the real `TemplatesScreen` (replacing the TASK-003
+placeholder): browses all templates, a "Built-in" tag on built-in
+ones, tap through to a new `TemplateDetailScreen` --- a read-only preview
+of the description/sections/items --- with a "Create list" button. That
+button reads the template's current structure, calls
+`createListFromTemplate`, and pushes straight into `ListDetailScreen`
+for the new list (mirroring TASK-013's "land in the new list"
+pattern).
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (111/111 passing, up from 106). New repository tests cover
+copying title/description/sections/items, copied items always
+starting unchecked, an empty template still yielding a usable
+one-section list, and --- the explicit independence check the task
+calls for --- editing the new list's item text/completion and renaming
+the list, then confirming the source template's stored structure is
+untouched. New widget tests cover the templates list (empty state,
+built-in tag, tap-through) and the preview-to-created-list flow,
+scoping assertions to the newly-pushed `ListDetailScreen` specifically
+since the `TemplateDetailScreen` underneath (which shows the same
+item text in its own preview) stays mounted in the navigation stack.
+
+**Next:** TASK-033 --- save list as user template.
+
+---
+
 ## 2026-09-12 --- TASK-031 complete
 
 **Done:** Added 5 built-in templates as fixed Dart data

@@ -4,11 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/features/lists/data/drift_list_repository.dart';
 import 'package:promptlist/features/lists/domain/list_repository.dart';
+import 'package:promptlist/features/templates/data/drift_template_repository.dart';
+import 'package:promptlist/features/templates/domain/template_repository.dart';
 
 void main() {
   late AppDatabase database;
   late int nextId;
   late DriftListRepository repository;
+  late DriftTemplateRepository templateRepository;
 
   setUp(() {
     database = AppDatabase(NativeDatabase.memory());
@@ -16,6 +19,10 @@ void main() {
     repository = DriftListRepository(
       database,
       idGenerator: () => 'id-${nextId++}',
+    );
+    templateRepository = DriftTemplateRepository(
+      database,
+      idGenerator: () => 'template-id-${nextId++}',
     );
   });
 
@@ -55,6 +62,100 @@ void main() {
 
       expect(await database.select(database.lists).get(), isEmpty);
       expect(await database.select(database.sections).get(), isEmpty);
+    });
+  });
+
+  group('createListFromTemplate', () {
+    test('copies title, description, sections, and items', () async {
+      await templateRepository.createTemplate(
+        name: 'Packing',
+        description: 'For weekend trips',
+        sections: const [
+          TemplateSectionInput(title: 'Clothing', items: ['Shirts', 'Pants']),
+          TemplateSectionInput(items: ['Charger']),
+        ],
+      );
+      final template = (await templateRepository.watchTemplates().first).single;
+      final withSections = await templateRepository.getTemplate(template.id);
+
+      final list = await repository.createListFromTemplate(withSections!);
+
+      expect(list.title, 'Packing');
+      expect(list.description, 'For weekend trips');
+
+      final sections = await (database.select(
+        database.sections,
+      )..where((tbl) => tbl.listId.equals(list.id))).get();
+      expect(sections, hasLength(2));
+
+      final allItems = await database.select(database.listItems).get();
+      expect(allItems.map((i) => i.content).toSet(), {
+        'Shirts',
+        'Pants',
+        'Charger',
+      });
+    });
+
+    test('copied items always start unchecked', () async {
+      await templateRepository.createTemplate(
+        name: 'Packing',
+        sections: const [
+          TemplateSectionInput(items: ['Shirts']),
+        ],
+      );
+      final template = (await templateRepository.watchTemplates().first).single;
+      final withSections = await templateRepository.getTemplate(template.id);
+
+      final list = await repository.createListFromTemplate(withSections!);
+
+      final items = await database.select(database.listItems).get();
+      expect(items.single.completed, isFalse);
+      expect(items.single.completedAt, isNull);
+      expect(list.id, isNotEmpty);
+    });
+
+    test('a template with no sections still yields a usable list', () async {
+      await templateRepository.createTemplate(name: 'Empty');
+      final template = (await templateRepository.watchTemplates().first).single;
+      final withSections = await templateRepository.getTemplate(template.id);
+
+      final list = await repository.createListFromTemplate(withSections!);
+
+      final sections = await (database.select(
+        database.sections,
+      )..where((tbl) => tbl.listId.equals(list.id))).get();
+      expect(sections, hasLength(1));
+    });
+
+    test('editing the new list never mutates the source template', () async {
+      await templateRepository.createTemplate(
+        name: 'Packing',
+        sections: const [
+          TemplateSectionInput(items: ['Shirts']),
+        ],
+      );
+      final template = (await templateRepository.watchTemplates().first).single;
+      final withSections = await templateRepository.getTemplate(template.id);
+
+      final list = await repository.createListFromTemplate(withSections!);
+      final newItem = (await database.select(database.listItems).get()).single;
+
+      // Edit the new list's copy: complete it and change its text.
+      await (database.update(
+        database.listItems,
+      )..where((tbl) => tbl.id.equals(newItem.id))).write(
+        ListItemsCompanion(
+          content: const Value('Shirts (packed)'),
+          completed: const Value(true),
+        ),
+      );
+      await repository.renameList(id: list.id, title: 'Trip');
+
+      final reloadedTemplate = await templateRepository.getTemplate(
+        template.id,
+      );
+      expect(reloadedTemplate!.template.name, 'Packing');
+      expect(reloadedTemplate.sections.single.items.single.content, 'Shirts');
     });
   });
 
