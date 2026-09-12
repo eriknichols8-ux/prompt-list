@@ -4,6 +4,60 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-012 complete
+
+**Done:** Built the real `ListsScreen`
+(`lib/features/lists/presentation/lists_screen.dart`) replacing the
+placeholder: a useful empty state (explains the three creation paths
+per `PRODUCT_SPEC.md` section 14, without implying buttons that don't
+exist until TASK-013) and, when lists exist, cards showing title, a
+linear progress bar, and an "N/M completed" label, tapping through to
+`ListDetailScreen` (new placeholder,
+`lib/features/lists/presentation/list_detail_screen.dart`, filled in
+starting TASK-013/014). Progress needs item counts, so added
+`ListSummary` (domain value object) and `watchListSummaries()` to
+`ListRepository`/`DriftListRepository` (a join over `sections`/
+`listItems` grouped by list, counting total and completed items per
+list); existing `watchLists()` is unchanged and still used/tested.
+Added Riverpod providers (`lib/features/lists/presentation/
+list_providers.dart`): `listRepositoryProvider`, `listSummariesProvider`
+(`StreamProvider`), `listByIdProvider` (`FutureProvider.family`).
+
+**Two real bugs found and fixed while wiring this up, both worth
+remembering for future widget tests that touch Riverpod + Drift:**
+
+1. `appDatabaseProvider.overrideWithValue(...)` (used by every widget
+   test to inject an in-memory database) bypasses the provider's own
+   `ref.onDispose(database.close)`, since `overrideWithValue` never
+   runs the original provider body. `test/support/test_providers.dart`
+   now requires the caller to create the `AppDatabase` explicitly and
+   close it in `tearDown`.
+2. Independent of that: cancelling a Drift `.watch()` stream (which
+   happens when Riverpod disposes a `StreamProvider`) schedules an
+   internal zero-duration debounce `Timer`. flutter_test's default
+   widget-tree teardown between tests doesn't give that timer a chance
+   to fire before its "no pending timers" check runs, and the failure
+   gets attributed to whichever test happens to be running next
+   (mirrors the cosmetic reporter mislabeling noted after TASK-002 ---
+   both are timing/attribution artifacts of tests sharing an isolate).
+   Fixed by a new `driftTestWidgets` helper (same file) that, after the
+   test body, unmounts the tree and calls
+   `tester.pump(const Duration(milliseconds: 1))` --- a plain `pump()`
+   with no duration does **not** elapse the fake clock at all, so it
+   would not have flushed the timer; a nonzero duration is required.
+   All widget tests exercising a Drift-backed screen should use
+   `driftTestWidgets` instead of `testWidgets`.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (23/23 passing). New
+`test/features/lists/presentation/lists_screen_test.dart` covers the
+empty state, a populated state with correct per-list progress text,
+and tapping a list to open `ListDetailScreen`.
+
+**Next:** TASK-013 --- create blank list.
+
+---
+
 ## 2026-09-12 --- TASK-011 complete
 
 **Done:** Added `ListRepository` (domain interface,

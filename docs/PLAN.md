@@ -75,7 +75,7 @@ Errors are surfaced intentionally. - Repository tests pass.
 
 **Dependencies:** TASK-010.
 
-### [ ] TASK-012 --- Lists home screen
+### [x] TASK-012 --- Lists home screen
 
 **Goal:** Display saved lists.
 

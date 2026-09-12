@@ -1,12 +1,22 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promptlist/app/root_shell.dart';
+import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/features/settings/presentation/settings_screen.dart';
 
-void main() {
-  Widget wrap(Widget child) => MaterialApp(home: child);
+import '../support/test_providers.dart';
 
-  testWidgets('starts on the Lists destination', (tester) async {
+void main() {
+  late AppDatabase database;
+
+  setUp(() => database = AppDatabase(NativeDatabase.memory()));
+  tearDown(() => database.close());
+
+  Widget wrap(Widget child) =>
+      wrapWithProviders(MaterialApp(home: child), database: database);
+
+  driftTestWidgets('starts on the Lists destination', (tester) async {
     await tester.pumpWidget(wrap(const RootShell()));
 
     expect(find.widgetWithText(AppBar, 'Lists'), findsOneWidget);
@@ -14,7 +24,7 @@ void main() {
     expect(find.text('AI Create'), findsOneWidget); // nav label only
   });
 
-  testWidgets('switches to Templates when tapped', (tester) async {
+  driftTestWidgets('switches to Templates when tapped', (tester) async {
     await tester.pumpWidget(wrap(const RootShell()));
 
     await tester.tap(find.widgetWithText(NavigationDestination, 'Templates'));
@@ -23,7 +33,7 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Templates'), findsOneWidget);
   });
 
-  testWidgets('switches to AI Create when tapped', (tester) async {
+  driftTestWidgets('switches to AI Create when tapped', (tester) async {
     await tester.pumpWidget(wrap(const RootShell()));
 
     await tester.tap(find.widgetWithText(NavigationDestination, 'AI Create'));
@@ -32,7 +42,9 @@ void main() {
     expect(find.widgetWithText(AppBar, 'AI Create'), findsOneWidget);
   });
 
-  testWidgets('navigation selection persists across rebuilds', (tester) async {
+  driftTestWidgets('navigation selection persists across rebuilds', (
+    tester,
+  ) async {
     await tester.pumpWidget(wrap(const RootShell()));
 
     await tester.tap(find.widgetWithText(NavigationDestination, 'Templates'));
@@ -42,7 +54,7 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Templates'), findsOneWidget);
   });
 
-  testWidgets('opens Settings from the app bar without a nav tab', (
+  driftTestWidgets('opens Settings from the app bar without a nav tab', (
     tester,
   ) async {
     await tester.pumpWidget(wrap(const RootShell()));

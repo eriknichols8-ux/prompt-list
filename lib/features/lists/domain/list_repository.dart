@@ -1,4 +1,5 @@
 import 'package:promptlist/core/database/app_database.dart';
+import 'package:promptlist/features/lists/domain/list_summary.dart';
 
 /// Thrown when list input fails validation before it would be persisted.
 class ListValidationException implements Exception {
@@ -17,6 +18,10 @@ class ListValidationException implements Exception {
 abstract interface class ListRepository {
   /// Emits the current non-archived lists whenever they change.
   Stream<List<ListRecord>> watchLists();
+
+  /// Emits the current non-archived lists together with their item
+  /// completion progress, for display on the Lists home screen.
+  Stream<List<ListSummary>> watchListSummaries();
 
   Future<ListRecord?> getList(String id);
 

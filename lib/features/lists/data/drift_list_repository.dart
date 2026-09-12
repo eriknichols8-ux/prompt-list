@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/features/lists/domain/list_repository.dart';
+import 'package:promptlist/features/lists/domain/list_summary.dart';
 import 'package:uuid/uuid.dart';
 
 /// Default sort order assigned to a list's initial default section.
@@ -20,6 +21,39 @@ class DriftListRepository implements ListRepository {
       ..where((tbl) => tbl.archivedAt.isNull())
       ..orderBy([(tbl) => OrderingTerm.desc(tbl.updatedAt)]);
     return query.watch();
+  }
+
+  @override
+  Stream<List<ListSummary>> watchListSummaries() {
+    return watchLists().asyncMap((lists) async {
+      final summaries = <ListSummary>[];
+      for (final list in lists) {
+        final total = await _countItems(list.id);
+        final completed = await _countItems(list.id, completedOnly: true);
+        summaries.add(
+          ListSummary(list: list, totalItems: total, completedItems: completed),
+        );
+      }
+      return summaries;
+    });
+  }
+
+  Future<int> _countItems(String listId, {bool completedOnly = false}) async {
+    final countExpression = _db.listItems.id.count();
+    final query = _db.selectOnly(_db.listItems)
+      ..join([
+        innerJoin(
+          _db.sections,
+          _db.sections.id.equalsExp(_db.listItems.sectionId),
+        ),
+      ])
+      ..where(_db.sections.listId.equals(listId))
+      ..addColumns([countExpression]);
+    if (completedOnly) {
+      query.where(_db.listItems.completed.equals(true));
+    }
+    final row = await query.getSingle();
+    return row.read(countExpression) ?? 0;
   }
 
   @override
