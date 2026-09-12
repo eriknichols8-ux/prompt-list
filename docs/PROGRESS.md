@@ -4,6 +4,62 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-046 complete (Milestone 4 finished)
+
+**Done:** Audited AI generation resilience against this task's
+acceptance criteria and found every property already held from prior
+tasks' design choices, so this task added targeted regression tests
+rather than new production code:
+
+-   **Understandable failure states** --- every `AiGenerationFailure`
+    from TASK-040/041/045 carries a human-readable `message`, shown
+    inline in red under the prompt field (TASK-042).
+-   **Retry** --- a failed generation leaves the prompt text and the
+    submit button intact (only `_isGenerating` gates it), so the same
+    "Make me a list" button is the retry affordance; no separate
+    control was needed.
+-   **Duplicate submissions prevented** --- `_canSubmit` already
+    combined "non-blank prompt" with "not currently generating", and
+    `_isGenerating` flips to `true` synchronously inside `setState`
+    before the first `await`, so a second call to `_submit` sees the
+    guard immediately even before any rebuild/paint occurs.
+-   **Existing data unaffected by failure** --- generation failures
+    never call any repository at all; the only repository access is
+    in `_showPreview`'s accept path, guarded by its own `try`/`catch`
+    (TASK-044).
+
+New `test/features/ai_generation/presentation/ai_create_resilience_test.dart`
+pins all of this down explicitly: a failed generation against a real
+in-memory database leaves a pre-existing list completely unchanged; a
+rapid double-tap (both `tester.tap` calls issued before any pump) on a
+call-counting fake service results in exactly one `generateList`
+invocation; and a `ListRepository` that throws on
+`createListFromGeneratedList` (a hand-written `noSuchMethod`-backed
+fake covering every other interface member) surfaces the existing
+inline "Could not save the generated list" message rather than
+crashing, with the prompt still on screen to retry.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (184/184 passing, up from 181).
+
+**Milestone 4 --- AI Generation Foundation is now complete**:
+provider-independent domain contract, a validator matching
+`AI_CONTRACT.md`'s full test-fixture list, prompt capture with a
+cancel-safe loading state, a preview screen with no database
+dependency at all (so no-persist-before-accept holds by construction),
+atomic acceptance into a normal list via the existing repository
+layer, a real OpenAI provider adapter behind the same interface used
+everywhere else, and confirmed resilience around failure/duplicate-
+submission/existing-data-safety. Manually verified end to end on the
+Android emulator with both the fake service and a real OpenAI call.
+
+**Next:** Milestone 5 --- AI List Editing, starting with TASK-050 (AI
+modification contract: send an existing list snapshot + instruction
+through the same provider-independent interface, reusing the
+validated `GeneratedList` contract for the result).
+
+---
+
 ## 2026-09-12 --- TASK-045 complete
 
 **Done:** Added `OpenAiListGenerationService`

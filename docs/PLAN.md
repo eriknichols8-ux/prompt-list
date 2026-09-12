@@ -289,7 +289,7 @@ tests use mocks/fixtures rather than live calls.
 
 **Dependencies:** TASK-041.
 
-### [ ] TASK-046 --- AI generation UX/error handling
+### [x] TASK-046 --- AI generation UX/error handling
 
 **Goal:** Make generation resilient.
 
