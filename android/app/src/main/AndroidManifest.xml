@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for AI generation requests (see
+         lib/features/ai_generation/data/openai_list_generation_service.dart);
+         no other feature needs network access. -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="promptlist"
         android:name="${applicationName}"

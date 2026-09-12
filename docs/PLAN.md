@@ -277,7 +277,7 @@ tests cover the transaction.
 
 **Dependencies:** TASK-043, TASK-011.
 
-### [ ] TASK-045 --- Development AI provider adapter
+### [x] TASK-045 --- Development AI provider adapter
 
 **Goal:** Connect one real model provider for development.
 

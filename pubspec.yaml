@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_riverpod: ^3.4.3
+  http: ^1.5.0
   path: ^1.9.1
   path_provider: ^2.1.6
   uuid: ^4.6.0

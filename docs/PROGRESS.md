@@ -4,6 +4,75 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-045 complete
+
+**Done:** Added `OpenAiListGenerationService`
+(`lib/features/ai_generation/data/openai_list_generation_service.dart`),
+a `ListGenerationService` implementation calling OpenAI's Chat
+Completions API (`response_format: json_object`, model
+`gpt-4o-mini` by default) with a system prompt that spells out the
+exact canonical structure from `AI_CONTRACT.md`. Every failure mode
+maps to a typed `AiGenerationFailure` instead of throwing: blank
+prompt short-circuits before any network call; a client-thrown
+exception or timeout (configurable, default 30s) map to
+`network`/`timeout`; HTTP 429 maps to `rateLimited`; any other
+non-200 status maps to `providerError`; a non-JSON body or a response
+missing `choices[0].message.content` maps to `invalidResponse`. The
+model's actual JSON content --- success or not --- always passes
+through the existing `GeneratedListValidator` before becoming a
+result, so a syntactically-valid-but-contract-violating reply (blank
+title, oversized fields, etc.) is rejected the same way malformed
+JSON is. Takes an injectable `http.Client` specifically so tests never
+make a live call.
+
+Added `http: ^1.5.0` to `pubspec.yaml`. Wired the real adapter into
+`lib/main.dart` only, not into `ai_generation_providers.dart`'s
+default: `listGenerationServiceProvider` still defaults to
+`FakeListGenerationService` (so every existing test, and the app
+itself when no key is configured, keeps working exactly as before),
+and `main()` overrides it with `OpenAiListGenerationService` only
+when `const String.fromEnvironment('OpenAI_API_Key')` is non-empty.
+That value is supplied via Flutter's built-in
+`--dart-define-from-file=.env` flag, never hard-coded --- documented
+in a new "Development Setup" section in `README.md` (including the
+Android Studio "Additional run args" field) and in `.env.example`
+(committed placeholder; the real `.env` stays gitignored as before).
+
+**Bug found and fixed while manually verifying:** the Android manifest
+had no `<uses-permission android:name="android.permission.INTERNET" />`
+at all --- unsurprising, since no feature before this one ever made a
+network call. Without it every request failed at the OS level with a
+DNS lookup error before reaching our code. Added the permission (with
+a comment noting AI generation is the only feature that needs it) and
+confirmed a real request succeeds after a full reinstall.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (181/181 passing, up from 172). New
+`openai_list_generation_service_test.dart` (9 tests) uses
+`package:http/testing.dart`'s `MockClient` --- never a live call --- to
+cover: blank prompt short-circuits with zero network calls; a good
+response is parsed and validated (also asserts the Authorization
+header and outgoing prompt); a validator-rejected payload maps to
+`invalidResponse`; non-JSON body; a response missing message content;
+HTTP 429 to `rateLimited`; other non-200 status to `providerError`; a
+thrown client exception to `network`; and a slow response past a short
+configured timeout to `timeout`. Also manually verified against the
+**real** OpenAI API on the Android emulator using the key in the local
+`.env` via `--dart-define-from-file=.env`: first reproduced the
+missing-permission network failure exactly as a typed inline error
+(useful confirmation the error-mapping path itself works end-to-end),
+then, after fixing the manifest and reinstalling, generated a genuine
+15-item "Day Hike Packing Checklist" that rendered correctly in the
+existing preview screen. Cancelled out rather than accepting, so no
+real-network-generated list was left in the persisted dev database.
+
+**Next:** TASK-046 --- AI generation UX/error handling polish (retry
+affordance, duplicate-submission guards beyond what TASK-042 already
+built, and confirming existing lists/data are never affected by a
+generation failure).
+
+---
+
 ## 2026-09-12 --- TASK-044 complete
 
 **Done:** Added `ListRepository.createListFromGeneratedList(GeneratedList)`

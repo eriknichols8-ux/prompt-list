@@ -17,6 +17,31 @@ User accepts
 Normal editable checklist
 ```
 
+## Development Setup: Real AI Generation
+
+The app works fully offline without any setup: without an API key it
+falls back to a deterministic built-in generator, so manual lists,
+templates, and AI Create's UI all work out of the box.
+
+To generate lists with a real OpenAI model during local development:
+
+1.  Copy `.env.example` to `.env` and put your own OpenAI API key in
+    it. `.env` is gitignored --- never commit it.
+2.  Run (or build) with the key compiled in via Flutter's built-in
+    `--dart-define-from-file` flag:
+
+    ``` text
+    flutter run --dart-define-from-file=.env
+    ```
+
+3.  In Android Studio, add `--dart-define-from-file=.env` to the
+    `main.dart` run configuration's "Additional run args" field so the
+    IDE's Run button picks it up too.
+
+See `docs/ARCHITECTURE.md`'s "AI Provider Security" section and
+`lib/main.dart` for how the key is loaded --- it is never hard-coded,
+logged, or bundled as a default in a distributable build.
+
 ## Ralph Development
 
 This repository is designed for one-task-at-a-time Ralph loops.
