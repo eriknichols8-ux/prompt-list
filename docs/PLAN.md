@@ -393,7 +393,7 @@ persisted. - Tests are deterministic.
 
 **Dependencies:** TASK-062.
 
-### [ ] TASK-071 --- Data migration safety
+### [x] TASK-071 --- Data migration safety
 
 **Goal:** Verify schema upgrades preserve user data.
 

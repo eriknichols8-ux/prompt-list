@@ -4,6 +4,45 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-071 complete
+
+**Done:** Audited every acceptance criterion; no code or test changes
+were needed since existing work from TASK-030 already satisfies all of
+them:
+
+-   **Migration tests cover every schema version introduced so far**
+    --- the app has only ever had two schema versions. `schemaVersion`
+    is `2`, and `MigrationStrategy.onUpgrade` has exactly one `if (from
+    < 2)` branch creating the three template tables. There is nothing
+    else to cover.
+-   **Representative old database fixtures upgrade without data loss**
+    --- `test/core/database/app_database_migration_test.dart` builds a
+    real v1 database on disk (via `test/core/database/fixtures/
+    v1_database.dart`, which reuses the actual v1-era table
+    definitions rather than a hand-rolled approximation) with a
+    realistic row set --- one list, one section, one **completed**
+    item --- then opens that same file with the current `AppDatabase`
+    and asserts every row survived with its original values (title,
+    `listId`, `content`, and critically `completed: true`, so the
+    migration doesn't merely preserve rows but preserves their actual
+    state), and that the new template tables exist and are usable with
+    correct defaults (`isBuiltIn` defaults `false`).
+-   **No production code resets the DB as a migration shortcut** ---
+    grepped `lib/` for `dropTable`/`DROP TABLE`/`deleteDatabase`/
+    `resetDatabase`/`deleteFile` and found nothing; the migration
+    strategy only ever adds tables via `onUpgrade`, never drops or
+    recreates anything.
+
+**Verified:** `flutter test test/core/database/app_database_migration_test.dart
+--concurrency=1` passes (1/1) on a clean run.
+
+**Next:** TASK-072 --- production AI secret architecture (document/
+implement a secure path for a distributable build, since `.env` +
+`--dart-define-from-file` is explicitly a development-only mechanism
+per `docs/ARCHITECTURE.md`'s "AI Provider Security" section).
+
+---
+
 ## 2026-09-12 --- TASK-070 complete (Milestone 7 started)
 
 **Done:** Added a dedicated `test/integration/` directory implementing
