@@ -6,6 +6,7 @@ import 'package:http/testing.dart';
 import 'package:promptlist/features/ai_generation/data/openai_list_generation_service.dart';
 import 'package:promptlist/features/ai_generation/domain/ai_generation_failure.dart';
 import 'package:promptlist/features/ai_generation/domain/ai_generation_result.dart';
+import 'package:promptlist/features/ai_generation/domain/generated_list.dart';
 
 http.Response _chatCompletionResponse(Object content, {int statusCode = 200}) {
   return http.Response(
@@ -213,6 +214,101 @@ void main() {
         expect(
           (result as AiGenerationError).failure.type,
           AiGenerationFailureType.timeout,
+        );
+      },
+    );
+  });
+
+  group('OpenAiListGenerationService.modifyList', () {
+    const snapshot = GeneratedList(
+      title: 'Groceries',
+      sections: [
+        GeneratedSection(items: [GeneratedItem(text: 'Milk')]),
+      ],
+    );
+
+    test('rejects a blank instruction without making a network call', () async {
+      var callCount = 0;
+      final service = OpenAiListGenerationService(
+        apiKey: 'k',
+        client: MockClient((request) async {
+          callCount++;
+          return _chatCompletionResponse('{}');
+        }),
+      );
+
+      final result = await service.modifyList(
+        snapshot: snapshot,
+        instruction: '   ',
+      );
+
+      expect(result, isA<AiGenerationError>());
+      expect(
+        (result as AiGenerationError).failure.type,
+        AiGenerationFailureType.invalidPrompt,
+      );
+      expect(callCount, 0);
+    });
+
+    test(
+      'sends the snapshot and instruction, and validates a good response',
+      () async {
+        http.Request? capturedRequest;
+        final service = OpenAiListGenerationService(
+          apiKey: 'k',
+          client: MockClient((request) async {
+            capturedRequest = request;
+            return _chatCompletionResponse({
+              'title': 'Groceries',
+              'sections': [
+                {
+                  'items': [
+                    {'text': 'Milk'},
+                    {'text': 'Eggs'},
+                  ],
+                },
+              ],
+            });
+          }),
+        );
+
+        final result = await service.modifyList(
+          snapshot: snapshot,
+          instruction: 'add eggs',
+        );
+
+        expect(result, isA<AiGenerationSuccess>());
+        final list = (result as AiGenerationSuccess).list;
+        expect(list.sections.single.items.map((i) => i.text), ['Milk', 'Eggs']);
+
+        final body = jsonDecode(capturedRequest!.body) as Map<String, dynamic>;
+        final userMessage =
+            (body['messages'] as List).last['content'] as String;
+        expect(userMessage, contains('"title":"Groceries"'));
+        expect(userMessage, contains('"text":"Milk"'));
+        expect(userMessage, contains('add eggs'));
+      },
+    );
+
+    test(
+      'an invalid modification response maps through the validator',
+      () async {
+        final service = OpenAiListGenerationService(
+          apiKey: 'k',
+          client: MockClient((request) async {
+            return _chatCompletionResponse('{"title": ""}');
+          }),
+        );
+
+        final result = await service.modifyList(
+          snapshot: snapshot,
+          instruction: 'add eggs',
+        );
+
+        expect(result, isA<AiGenerationError>());
+        expect(
+          (result as AiGenerationError).failure.type,
+          AiGenerationFailureType.invalidResponse,
         );
       },
     );

@@ -29,6 +29,14 @@ class _ControllableGenerationService implements ListGenerationService {
     pending = completer;
     return completer.future;
   }
+
+  @override
+  Future<AiGenerationResult> modifyList({
+    required GeneratedList snapshot,
+    required String instruction,
+  }) {
+    throw UnimplementedError('not used in this test');
+  }
 }
 
 Future<void> pumpScreen(

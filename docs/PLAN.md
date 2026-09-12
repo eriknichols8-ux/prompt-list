@@ -302,7 +302,7 @@ prevented. - Loading and failure widget tests pass.
 
 ## Milestone 5 --- AI List Editing
 
-### [ ] TASK-050 --- AI modification contract
+### [x] TASK-050 --- AI modification contract
 
 **Goal:** Support natural-language changes to an existing list.
 

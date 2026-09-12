@@ -45,6 +45,14 @@ class _CountingGenerationService implements ListGenerationService {
     await Future<void>.delayed(const Duration(milliseconds: 5));
     return _result;
   }
+
+  @override
+  Future<AiGenerationResult> modifyList({
+    required GeneratedList snapshot,
+    required String instruction,
+  }) {
+    throw UnimplementedError('not used in this test');
+  }
 }
 
 void main() {

@@ -5,12 +5,13 @@ import 'package:http/http.dart' as http;
 
 import '../domain/ai_generation_failure.dart';
 import '../domain/ai_generation_result.dart';
+import '../domain/generated_list.dart';
 import '../domain/generated_list_validator.dart';
 import '../domain/list_generation_service.dart';
 
 /// System prompt instructing the model to return exactly the canonical
 /// structure defined in `docs/AI_CONTRACT.md`, and nothing else.
-const _systemPrompt = '''
+const _generationSystemPrompt = '''
 You turn a short user request into a checklist. Respond with ONLY a
 single JSON object -- no markdown, no commentary -- matching this
 shape exactly:
@@ -38,6 +39,36 @@ Rules:
   that could be incomplete or outdated), still do your best and keep
   the list reasonably sized; the app will show it for review before
   anything is saved.
+''';
+
+/// System prompt for modifying an existing list. Uses the same output
+/// shape as generation (see `_generationSystemPrompt`).
+const _modificationSystemPrompt = '''
+You are given an existing checklist as JSON, plus an instruction
+describing how to change it. Respond with ONLY a single JSON object --
+no markdown, no commentary -- representing the FULL updated list,
+matching this shape exactly:
+
+{
+  "title": "string, required, a short useful title",
+  "description": "string or null, optional, one short sentence",
+  "sections": [
+    {
+      "title": "string or null; use null for a single flat list",
+      "items": [
+        { "text": "string, required, one checklist item" }
+      ]
+    }
+  ]
+}
+
+Rules:
+- Apply the instruction to the existing list; keep everything else
+  the same unless the instruction implies otherwise.
+- Return the complete list, not just the changed parts.
+- Never include completion state, IDs, or sort order -- the app
+  assigns those and decides separately what stays checked.
+- Keep item text concise and free of numbering or bullet characters.
 ''';
 
 /// [ListGenerationService] backed by the OpenAI Chat Completions API.
@@ -82,6 +113,43 @@ class OpenAiListGenerationService implements ListGenerationService {
       );
     }
 
+    return _requestAndValidate([
+      {'role': 'system', 'content': _generationSystemPrompt},
+      {'role': 'user', 'content': trimmed},
+    ]);
+  }
+
+  @override
+  Future<AiGenerationResult> modifyList({
+    required GeneratedList snapshot,
+    required String instruction,
+  }) async {
+    final trimmed = instruction.trim();
+    if (trimmed.isEmpty) {
+      return const AiGenerationError(
+        AiGenerationFailure(
+          AiGenerationFailureType.invalidPrompt,
+          'Instruction must not be empty.',
+        ),
+      );
+    }
+
+    final userMessage =
+        'Existing list:\n${jsonEncode(snapshot.toJson())}\n\n'
+        'Instruction: $trimmed';
+
+    return _requestAndValidate([
+      {'role': 'system', 'content': _modificationSystemPrompt},
+      {'role': 'user', 'content': userMessage},
+    ]);
+  }
+
+  /// Sends [messages] to the Chat Completions endpoint and validates the
+  /// resulting message content, mapping every transport/provider/parse
+  /// failure to a typed [AiGenerationFailure] along the way.
+  Future<AiGenerationResult> _requestAndValidate(
+    List<Map<String, String>> messages,
+  ) async {
     final http.Response response;
     try {
       response = await _client
@@ -94,10 +162,7 @@ class OpenAiListGenerationService implements ListGenerationService {
             body: jsonEncode({
               'model': model,
               'response_format': {'type': 'json_object'},
-              'messages': [
-                {'role': 'system', 'content': _systemPrompt},
-                {'role': 'user', 'content': trimmed},
-              ],
+              'messages': messages,
             }),
           )
           .timeout(timeout);

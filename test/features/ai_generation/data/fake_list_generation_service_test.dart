@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:promptlist/features/ai_generation/data/fake_list_generation_service.dart';
 import 'package:promptlist/features/ai_generation/domain/ai_generation_failure.dart';
 import 'package:promptlist/features/ai_generation/domain/ai_generation_result.dart';
+import 'package:promptlist/features/ai_generation/domain/generated_list.dart';
 
 void main() {
   group('FakeListGenerationService', () {
@@ -41,6 +42,79 @@ void main() {
       expect(
         (result as AiGenerationError).failure.type,
         AiGenerationFailureType.timeout,
+      );
+    });
+  });
+
+  group('FakeListGenerationService.modifyList', () {
+    const snapshot = GeneratedList(
+      title: 'Groceries',
+      sections: [
+        GeneratedSection(items: [GeneratedItem(text: 'Milk')]),
+      ],
+    );
+
+    test('echoes the snapshot back unchanged by default', () async {
+      final service = FakeListGenerationService();
+
+      final result = await service.modifyList(
+        snapshot: snapshot,
+        instruction: 'add eggs',
+      );
+
+      expect(result, isA<AiGenerationSuccess>());
+      expect((result as AiGenerationSuccess).list, equals(snapshot));
+    });
+
+    test('rejects a blank instruction with a typed failure', () async {
+      final service = FakeListGenerationService();
+
+      final result = await service.modifyList(
+        snapshot: snapshot,
+        instruction: '   ',
+      );
+
+      expect(result, isA<AiGenerationError>());
+      expect(
+        (result as AiGenerationError).failure.type,
+        AiGenerationFailureType.invalidPrompt,
+      );
+    });
+
+    test('honors an onModify override for scripted scenarios', () async {
+      GeneratedList? capturedSnapshot;
+      String? capturedInstruction;
+      final service = FakeListGenerationService(
+        onModify: (snapshot, instruction) {
+          capturedSnapshot = snapshot;
+          capturedInstruction = instruction;
+          return const AiGenerationSuccess(
+            GeneratedList(
+              title: 'Groceries',
+              sections: [
+                GeneratedSection(
+                  items: [
+                    GeneratedItem(text: 'Milk'),
+                    GeneratedItem(text: 'Eggs'),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      );
+
+      final result = await service.modifyList(
+        snapshot: snapshot,
+        instruction: 'add eggs',
+      );
+
+      expect(capturedSnapshot, equals(snapshot));
+      expect(capturedInstruction, 'add eggs');
+      expect(result, isA<AiGenerationSuccess>());
+      expect(
+        (result as AiGenerationSuccess).list.sections.single.items,
+        hasLength(2),
       );
     });
   });

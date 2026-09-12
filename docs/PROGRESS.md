@@ -4,6 +4,65 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-050 complete (Milestone 5 started)
+
+**Done:** Extended `ListGenerationService` (rather than adding a
+separate interface, per ADR-004's "AI is behind a provider-independent
+service" and this file's own TASK-040 doc comment) with:
+
+```dart
+Future<AiGenerationResult> modifyList({
+  required GeneratedList snapshot,
+  required String instruction,
+});
+```
+
+The existing `GeneratedList` model is reused as both the input
+snapshot and the output shape --- `AI_CONTRACT.md` already specifies
+modification output uses the canonical Generated List structure, and
+since a snapshot is just a list's current title/description/sections/
+items with no completion state, the same type fits the input side too
+without inventing a parallel DTO. Added `toJson()` to
+`GeneratedItem`/`GeneratedSection`/`GeneratedList` (matching
+`AI_CONTRACT.md`'s exact field names) so a snapshot can be serialized
+into a provider request.
+
+`FakeListGenerationService.modifyList` defaults to echoing the
+snapshot back unchanged (a genuinely deterministic "did nothing"
+default, honest about not simulating real intelligence) with an
+`onModify` override for scripted scenarios, mirroring `onGenerate`.
+`OpenAiListGenerationService` gained a `_modificationSystemPrompt` and
+a `modifyList` implementation that JSON-encodes the snapshot into the
+user message alongside the instruction; the shared HTTP-call/status-
+mapping/validate logic was factored out of `generateList` into a
+private `_requestAndValidate(messages)` so both entry points get the
+exact same transport/provider/malformed-response error mapping
+without duplicating it.
+
+No UI or persistence changes in this task --- "original persisted list
+is unchanged until user accepts" holds trivially since nothing here
+touches a repository at all; TASK-051 adds the "Ask AI to change this
+list" entry point and TASK-052 adds the accept/apply step.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (192/192 passing, up from 184). New tests:
+`generated_list_test.dart`'s `toJson` group (exact field-name
+encoding, round-trips through `jsonEncode`); `fake_list_generation_service_test.dart`'s
+`modifyList` group (echoes unchanged by default, rejects a blank
+instruction, `onModify` override receives the exact snapshot/
+instruction passed in); and `openai_list_generation_service_test.dart`'s
+`modifyList` group (blank instruction short-circuits with zero network
+calls, a good response is validated and the outgoing request body
+contains both the encoded snapshot and the instruction text, an
+invalid response maps through the validator same as generation).
+
+**Next:** TASK-051 --- "Ask AI to change this list" UI (an AI-modify
+action on an existing list, using `ListDetailScreen`'s current
+sections/items to build the `GeneratedList` snapshot, reusing
+`GeneratedListPreviewScreen` for the proposed result).
+
+---
+
 ## 2026-09-12 --- TASK-046 complete (Milestone 4 finished)
 
 **Done:** Audited AI generation resilience against this task's

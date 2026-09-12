@@ -8,6 +8,11 @@ class GeneratedItem {
 
   final String text;
 
+  /// Encodes this item using the canonical field names from
+  /// `docs/AI_CONTRACT.md`, e.g. for sending an existing list snapshot
+  /// as part of a modification request (TASK-050).
+  Map<String, dynamic> toJson() => {'text': text};
+
   @override
   bool operator ==(Object other) =>
       other is GeneratedItem && other.text == text;
@@ -25,6 +30,11 @@ class GeneratedSection {
 
   final String? title;
   final List<GeneratedItem> items;
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'items': items.map((item) => item.toJson()).toList(),
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -58,6 +68,12 @@ class GeneratedList {
   final String title;
   final String? description;
   final List<GeneratedSection> sections;
+
+  Map<String, dynamic> toJson() => {
+    'title': title,
+    'description': description,
+    'sections': sections.map((section) => section.toJson()).toList(),
+  };
 
   @override
   bool operator ==(Object other) =>
