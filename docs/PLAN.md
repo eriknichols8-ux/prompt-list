@@ -19,7 +19,7 @@ Rules:
 
 ## Milestone 0 --- Repository Foundation
 
-### [ ] TASK-001 --- Bootstrap Flutter project
+### [x] TASK-001 --- Bootstrap Flutter project
 
 **Goal:** Create the application shell.
 
