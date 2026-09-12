@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/core/database/database_provider.dart';
+import 'package:promptlist/features/lists/data/drift_list_item_repository.dart';
 import 'package:promptlist/features/lists/data/drift_list_repository.dart';
+import 'package:promptlist/features/lists/domain/list_item_repository.dart';
 import 'package:promptlist/features/lists/domain/list_repository.dart';
 import 'package:promptlist/features/lists/domain/list_summary.dart';
 
@@ -19,4 +21,17 @@ final listSummariesProvider = StreamProvider<List<ListSummary>>((ref) {
 /// A single list by ID, for the list detail screen.
 final listByIdProvider = FutureProvider.family<ListRecord?, String>((ref, id) {
   return ref.watch(listRepositoryProvider).getList(id);
+});
+
+/// The app-wide [ListItemRepository] instance.
+final listItemRepositoryProvider = Provider<ListItemRepository>((ref) {
+  return DriftListItemRepository(ref.watch(appDatabaseProvider));
+});
+
+/// Reactive stream of a list's items, for the list detail screen.
+final itemsProvider = StreamProvider.family<List<ListItemRecord>, String>((
+  ref,
+  listId,
+) {
+  return ref.watch(listItemRepositoryProvider).watchItems(listId);
 });

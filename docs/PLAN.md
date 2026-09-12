@@ -97,7 +97,7 @@ Tests cover validation and persistence.
 
 **Dependencies:** TASK-011, TASK-012.
 
-### [ ] TASK-014 --- List item CRUD
+### [x] TASK-014 --- List item CRUD
 
 **Goal:** Make a list useful as a checklist.
 

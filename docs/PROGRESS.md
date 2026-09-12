@@ -4,6 +4,44 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-014 complete
+
+**Done:** Added `ListItemRepository`/`DriftListItemRepository`
+(`lib/features/lists/domain/list_item_repository.dart`,
+`lib/features/lists/data/drift_list_item_repository.dart`):
+`watchItems`, `addItem`, `editItemText`, `deleteItem`. Items are
+addressed by `listId` even though they belong to sections in the
+schema, since sections aren't user-facing until Milestone 2 ---
+`addItem` resolves the list's (currently single, default) section
+internally and assigns the next spaced sort-order value
+(`ARCHITECTURE.md`'s 1000/2000/... scheme). Both `addItem` and
+`editItemText` reject blank text via `ListItemValidationException`,
+mirroring `ListRepository`.
+
+Built out `ListDetailScreen` (was a title-only placeholder since
+TASK-012): a persistent bottom "add item" field (Add button disabled
+for blank/whitespace input), a `ListView` of items each opening
+`EditItemDialog` (new,
+`lib/features/lists/presentation/edit_item_dialog.dart` --- pre-filled
+text, Save disabled for blank, shared shape with `CreateListDialog`)
+on tap, and a trailing delete icon per item. No checkbox yet ---
+completion is TASK-015 --- and no confirmation on delete yet ---
+destructive-action UX is TASK-017.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (38/38 passing). New
+`test/features/lists/data/drift_list_item_repository_test.dart` covers
+add (trimmed text, increasing sort order, blank rejected/persists
+nothing), edit (updates text, blank rejected/leaves item unchanged),
+delete, and `watchItems` emitting on each change. New
+`test/features/lists/presentation/list_detail_screen_test.dart` covers
+the empty state, adding an item (shown, input cleared), the add button
+disabled for blank input, editing, and deleting.
+
+**Next:** TASK-015 --- complete and uncomplete items.
+
+---
+
 ## 2026-09-12 --- TASK-013 complete
 
 **Done:** Added a "New list" FAB to `ListsScreen` (now returns its own
