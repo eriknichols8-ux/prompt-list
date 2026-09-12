@@ -4,6 +4,49 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-072 complete
+
+**Done:** Documentation-only, deliberately: implementing a real
+server-side proxy means provisioning paid hosting and likely a domain/
+account, which `CLAUDE.md`'s Evolution Guardrails explicitly forbid
+doing autonomously ("do not add paid services or meaningful recurring
+costs", "do not create external accounts"). Since no store
+distribution has been requested or authorized, the correct scope here
+is a concrete, ready-to-implement design rather than standing up
+actual infrastructure.
+
+Added **ADR-009** to `docs/DECISIONS.md`, elaborating on ADR-007's
+"needs an appropriate secure architecture" placeholder with an actual
+design: transport shape (client sends the same prompt/snapshot+
+instruction plus a lightweight app-issued token, never the provider's
+own key), proxy responsibilities (hold the real key server-side,
+authenticate, rate-limit per device/IP, re-enforce `AI_CONTRACT.md`'s
+size limits server-side as defense in depth, forward to the provider
+unchanged), confirmation that `GeneratedListValidator` remains the
+single source of structural validation on the client either way, the
+specific client-side change required (a new `ListGenerationService`
+implementation pointed at the proxy --- contained and isolated because
+of ADR-004's provider-independence), and that every failure mode maps
+onto the *existing* `AiGenerationFailureType` values with no new
+categories needed. The ADR explicitly states implementation is
+deferred pending human authorization to provision real infrastructure.
+
+Updated `docs/ARCHITECTURE.md`'s "AI Provider Security" section to
+describe the actual TASK-045 development mechanism concretely (was
+generic/aspirational language) and to point at ADR-009 for the
+production design rather than restating it.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues) --- no
+`flutter test` changes needed since nothing in `lib/`/`test/` changed.
+
+**Next:** TASK-073 --- release verification (format/analyze/full test
+suite/integration suite/Android release build; iOS build verification
+requires a macOS environment this session doesn't have, so that part
+will need to be documented as a blocker if genuinely unavailable
+rather than skipped silently).
+
+---
+
 ## 2026-09-12 --- TASK-071 complete
 
 **Done:** Audited every acceptance criterion; no code or test changes

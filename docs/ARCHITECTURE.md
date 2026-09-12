@@ -204,15 +204,25 @@ Only explicit acceptance converts it into persisted entities.
 
 ## AI Provider Security
 
-For local development, configuration may be supplied through a
-non-committed development mechanism.
+For local development, configuration is supplied through a
+non-committed development mechanism: a gitignored `.env` file loaded
+at build/run time via Flutter's `--dart-define-from-file` (see
+`OpenAiListGenerationService` and `main.dart`, TASK-045). Without a key
+configured, the app falls back to a deterministic fake service rather
+than failing --- AI is optional, never a hard dependency.
 
 For an app distributed to end users, do not embed a privileged AI
 provider secret in the application binary.
 
 Before production distribution, use a secure architecture such as a
 small authenticated/rate-limited server-side proxy, or another
-deliberately approved approach.
+deliberately approved approach. See `DECISIONS.md`'s ADR-009 for the
+concrete target design (transport, proxy responsibilities, required
+client-side change, error mapping) --- documented and ready to
+implement when store distribution is actually authorized, but not
+implemented yet, since doing so requires provisioning paid hosting
+that this project's autonomous-evolution guardrails do not permit
+without explicit human authorization.
 
 ## AI Validation
 

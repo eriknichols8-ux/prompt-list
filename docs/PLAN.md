@@ -404,7 +404,7 @@ shortcut.
 
 **Dependencies:** all schema-changing tasks.
 
-### [ ] TASK-072 --- Production AI secret architecture
+### [x] TASK-072 --- Production AI secret architecture
 
 **Goal:** Make the AI path safe for a distributable app.
 

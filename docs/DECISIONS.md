@@ -109,6 +109,74 @@ guardrail).
 
 ------------------------------------------------------------------------
 
+## ADR-009 --- Production AI access via a server-side proxy (documented, not implemented)
+
+**Status:** Accepted as the target architecture; implementation
+deliberately deferred.
+
+**Decision:** Before this app is ever distributed outside local
+development, AI generation/modification requests must go through a
+small, authenticated, rate-limited server-side proxy that holds the
+real provider API key --- never a client-embedded one. Concrete design
+for when that work is authorized:
+
+-   **Transport:** client sends `{ prompt }` or `{ snapshot,
+    instruction }` to the proxy over HTTPS, exactly like today's direct
+    call to the provider, plus a lightweight app-issued auth token (not
+    the end user's own credential, and never the provider's own key).
+-   **Proxy responsibilities:** hold the real provider key as a
+    server-side secret; authenticate the request; enforce per-device/
+    per-IP rate limits to bound cost and abuse; re-enforce
+    `AI_CONTRACT.md`'s size limits server-side too (defense in depth,
+    since a modified client could send oversized payloads); forward
+    the same canonical system+user content to the provider; return the
+    provider's response (or a normalized error) unchanged.
+-   **Client-side validation is unaffected:** the proxy does not
+    duplicate `GeneratedListValidator`'s structural validation --- that
+    stays the single source of truth on the client, exactly as it is
+    today. The proxy only owns transport/auth/rate-limiting/cost
+    control.
+-   **Client change required:** because `ListGenerationService` is
+    already provider-independent (ADR-004), swapping the direct
+    OpenAI call for a proxied one is a contained, isolated change --- a
+    new implementation behind the same interface, pointed at the
+    proxy's URL with the proxy's own lightweight token instead of
+    `OpenAiListGenerationService`'s API key. No domain or UI code
+    changes.
+-   **Error mapping needs no new categories:** a proxy rate-limit
+    response maps to the existing `AiGenerationFailureType.rateLimited`;
+    a proxy auth failure maps to `providerError`; proxy
+    unavailability maps to `network`/`timeout` --- the same typed
+    failures already implemented in TASK-045/046 cover this without
+    modification.
+-   **Logging:** request metadata (timestamp, device token, status,
+    token usage) may be logged for abuse monitoring; full prompts/list
+    content must not be, per `ARCHITECTURE.md`'s Logging section.
+
+**Reason:** ADR-007 already forbids embedding a privileged key in a
+distributable binary; this ADR specifies *how* production access
+actually works once store distribution is pursued, so a future loop
+has a concrete design instead of a vague pointer.
+
+**Consequences:** Implementing this requires provisioning and paying
+for real server hosting (and likely a domain/account), which
+CLAUDE.md's Evolution Guardrails explicitly forbid doing
+autonomously ("do not add paid services or meaningful recurring
+costs", "do not create external accounts"). This ADR is therefore a
+**documented, deferred** plan: none of the server-side pieces above
+are implemented by this task, and must not be autonomously implemented
+later either without explicit human authorization to provision real
+infrastructure. Local development is unaffected: the existing `.env` +
+`--dart-define-from-file` mechanism (TASK-045) remains the correct,
+explicitly-documented development-only path (see
+`ARCHITECTURE.md`'s "AI Provider Security" section) until store
+distribution is actually authorized.
+
+**Supersedes:** none; elaborates on ADR-007's "needs an appropriate
+secure architecture" with a concrete design.
+
+------------------------------------------------------------------------
+
 ## ADR Template
 
 ### ADR-### --- Title
