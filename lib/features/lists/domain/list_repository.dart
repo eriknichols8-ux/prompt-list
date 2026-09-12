@@ -56,6 +56,25 @@ abstract interface class ListRepository {
   /// changes how it behaves afterward.
   Future<ListRecord> createListFromGeneratedList(GeneratedList generated);
 
+  /// Applies an accepted AI modification: atomically replaces the list
+  /// identified by [listId]'s title, description, sections, and items
+  /// with [modified]'s content.
+  ///
+  /// Completion state is never taken from the AI. An item in [modified]
+  /// keeps its existing completion only when its trimmed text exactly
+  /// matches an existing item's trimmed text (each existing item can be
+  /// matched at most once, so duplicate text doesn't double-preserve);
+  /// every other item -- new, reworded, or an extra duplicate beyond
+  /// what matched -- starts unchecked. See `AI_CONTRACT.md`'s
+  /// "Completion State During Modification" section.
+  ///
+  /// Runs in a single transaction, so a failure partway through leaves
+  /// the original list completely intact.
+  Future<ListRecord> applyGeneratedListModification({
+    required String listId,
+    required GeneratedList modified,
+  });
+
   /// Renames the list identified by [id] to [title].
   ///
   /// Throws [ListValidationException] if [title] is blank.

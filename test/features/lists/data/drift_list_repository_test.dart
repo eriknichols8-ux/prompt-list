@@ -244,6 +244,220 @@ void main() {
     });
   });
 
+  group('applyGeneratedListModification', () {
+    Future<ListRecord> createGroceriesWithMilkAndEggs() async {
+      final list = await repository.createList(title: 'Groceries');
+      final section = await (database.select(
+        database.sections,
+      )..where((tbl) => tbl.listId.equals(list.id))).getSingle();
+      await database
+          .into(database.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: 'milk',
+              sectionId: section.id,
+              content: 'Milk',
+              sortOrder: 1000,
+              createdAt: DateTime.now(),
+              completed: const Value(true),
+              completedAt: Value(DateTime.now()),
+            ),
+          );
+      await database
+          .into(database.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: 'eggs',
+              sectionId: section.id,
+              content: 'Eggs',
+              sortOrder: 2000,
+              createdAt: DateTime.now(),
+            ),
+          );
+      return list;
+    }
+
+    test('replaces title, description, sections, and items', () async {
+      final list = await createGroceriesWithMilkAndEggs();
+
+      final updated = await repository.applyGeneratedListModification(
+        listId: list.id,
+        modified: const GeneratedList(
+          title: 'Weekly groceries',
+          description: 'Updated by AI',
+          sections: [
+            GeneratedSection(
+              title: 'Dairy',
+              items: [
+                GeneratedItem(text: 'Milk'),
+                GeneratedItem(text: 'Cheese'),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(updated.title, 'Weekly groceries');
+      expect(updated.description, 'Updated by AI');
+
+      final sections = await (database.select(
+        database.sections,
+      )..where((tbl) => tbl.listId.equals(list.id))).get();
+      expect(sections, hasLength(1));
+      expect(sections.single.title, 'Dairy');
+
+      final items = await database.select(database.listItems).get();
+      expect(items.map((i) => i.content).toSet(), {'Milk', 'Cheese'});
+    });
+
+    test('preserves completion only for an exact-text match, and never for '
+        'new items', () async {
+      final list = await createGroceriesWithMilkAndEggs();
+
+      await repository.applyGeneratedListModification(
+        listId: list.id,
+        modified: const GeneratedList(
+          title: 'Groceries',
+          sections: [
+            GeneratedSection(
+              items: [
+                GeneratedItem(text: 'Milk'), // unchanged -> stays checked
+                GeneratedItem(text: 'Eggs'), // unchanged, already unchecked
+                GeneratedItem(text: 'Bread'), // new -> starts unchecked
+              ],
+            ),
+          ],
+        ),
+      );
+
+      final items = await database.select(database.listItems).get();
+      final byContent = {for (final i in items) i.content: i};
+      expect(byContent['Milk']!.completed, isTrue);
+      expect(byContent['Eggs']!.completed, isFalse);
+      expect(byContent['Bread']!.completed, isFalse);
+    });
+
+    test('a reworded item is treated as new and starts unchecked', () async {
+      final list = await createGroceriesWithMilkAndEggs();
+
+      await repository.applyGeneratedListModification(
+        listId: list.id,
+        modified: const GeneratedList(
+          title: 'Groceries',
+          sections: [
+            GeneratedSection(items: [GeneratedItem(text: 'Whole milk')]),
+          ],
+        ),
+      );
+
+      final item = (await database.select(database.listItems).get()).single;
+      expect(item.content, 'Whole milk');
+      expect(item.completed, isFalse);
+    });
+
+    test(
+      'duplicate matching text only preserves completion for one item',
+      () async {
+        final list = await repository.createList(title: 'Groceries');
+        final section = await (database.select(
+          database.sections,
+        )..where((tbl) => tbl.listId.equals(list.id))).getSingle();
+        await database
+            .into(database.listItems)
+            .insert(
+              ListItemsCompanion.insert(
+                id: 'milk-completed',
+                sectionId: section.id,
+                content: 'Milk',
+                sortOrder: 1000,
+                createdAt: DateTime.now(),
+                completed: const Value(true),
+              ),
+            );
+
+        await repository.applyGeneratedListModification(
+          listId: list.id,
+          modified: const GeneratedList(
+            title: 'Groceries',
+            sections: [
+              GeneratedSection(
+                items: [
+                  GeneratedItem(text: 'Milk'),
+                  GeneratedItem(text: 'Milk'),
+                ],
+              ),
+            ],
+          ),
+        );
+
+        final items = await database.select(database.listItems).get();
+        expect(items, hasLength(2));
+        expect(items.where((i) => i.completed), hasLength(1));
+      },
+    );
+
+    test(
+      'a modification with no sections still yields a usable list',
+      () async {
+        final list = await createGroceriesWithMilkAndEggs();
+
+        await repository.applyGeneratedListModification(
+          listId: list.id,
+          modified: const GeneratedList(title: 'Empty now', sections: []),
+        );
+
+        final sections = await (database.select(
+          database.sections,
+        )..where((tbl) => tbl.listId.equals(list.id))).get();
+        expect(sections, hasLength(1));
+        expect(await database.select(database.listItems).get(), isEmpty);
+      },
+    );
+
+    test(
+      'a mid-transaction failure leaves the original list completely intact',
+      () async {
+        final poisoned = DriftListRepository(database, idGenerator: () => 'x');
+        final list = await poisoned.createList(title: 'Groceries');
+        final section = await (database.select(
+          database.sections,
+        )..where((tbl) => tbl.listId.equals(list.id))).getSingle();
+        await database
+            .into(database.listItems)
+            .insert(
+              ListItemsCompanion.insert(
+                id: 'milk',
+                sectionId: section.id,
+                content: 'Milk',
+                sortOrder: 1000,
+                createdAt: DateTime.now(),
+                completed: const Value(true),
+              ),
+            );
+
+        await expectLater(
+          poisoned.applyGeneratedListModification(
+            listId: list.id,
+            modified: const GeneratedList(
+              title: 'Doomed update',
+              sections: [
+                GeneratedSection(items: [GeneratedItem(text: 'A')]),
+                GeneratedSection(items: [GeneratedItem(text: 'B')]),
+              ],
+            ),
+          ),
+          throwsA(anything),
+        );
+
+        final reloaded = await repository.getList(list.id);
+        expect(reloaded!.title, 'Groceries');
+        final items = await database.select(database.listItems).get();
+        expect(items.single.content, 'Milk');
+        expect(items.single.completed, isTrue);
+      },
+    );
+  });
+
   group('getList', () {
     test('returns null when the list does not exist', () async {
       expect(await repository.getList('missing'), isNull);

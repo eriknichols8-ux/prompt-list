@@ -262,6 +262,97 @@ class DriftListRepository implements ListRepository {
   }
 
   @override
+  Future<ListRecord> applyGeneratedListModification({
+    required String listId,
+    required GeneratedList modified,
+  }) {
+    return _db.transaction(() async {
+      final existingItems =
+          await (_db.select(_db.listItems).join([
+                innerJoin(
+                  _db.sections,
+                  _db.sections.id.equalsExp(_db.listItems.sectionId),
+                ),
+              ])..where(_db.sections.listId.equals(listId)))
+              .map((row) => row.readTable(_db.listItems))
+              .get();
+
+      // Exact-text match, first-available: each existing item can only
+      // preserve completion for one new item, so duplicate text never
+      // double-preserves. See the matching strategy documented on
+      // ListRepository.applyGeneratedListModification.
+      final completionByText = <String, List<bool>>{};
+      for (final item in existingItems) {
+        completionByText
+            .putIfAbsent(item.content.trim(), () => [])
+            .add(item.completed);
+      }
+      bool wasCompleted(String text) {
+        final queue = completionByText[text.trim()];
+        if (queue == null || queue.isEmpty) return false;
+        return queue.removeAt(0);
+      }
+
+      final now = DateTime.now();
+
+      await (_db.delete(
+        _db.sections,
+      )..where((tbl) => tbl.listId.equals(listId))).go();
+
+      await (_db.update(
+        _db.lists,
+      )..where((tbl) => tbl.id.equals(listId))).write(
+        ListsCompanion(
+          title: Value(modified.title),
+          description: Value(modified.description),
+          updatedAt: Value(now),
+        ),
+      );
+
+      final sections = modified.sections.isEmpty
+          ? const [GeneratedSection(items: [])]
+          : modified.sections;
+
+      var sectionSortOrder = 0;
+      for (final section in sections) {
+        sectionSortOrder += _defaultSectionSortOrder;
+        final sectionId = _generateId();
+        await _db
+            .into(_db.sections)
+            .insert(
+              SectionsCompanion.insert(
+                id: sectionId,
+                listId: listId,
+                title: Value(section.title),
+                sortOrder: sectionSortOrder,
+              ),
+            );
+
+        var itemSortOrder = 0;
+        for (final item in section.items) {
+          itemSortOrder += _defaultSectionSortOrder;
+          final preserved = wasCompleted(item.text);
+          await _db
+              .into(_db.listItems)
+              .insert(
+                ListItemsCompanion.insert(
+                  id: _generateId(),
+                  sectionId: sectionId,
+                  content: item.text,
+                  sortOrder: itemSortOrder,
+                  createdAt: now,
+                  completed: Value(preserved),
+                  completedAt: Value(preserved ? now : null),
+                ),
+              );
+        }
+      }
+
+      return (await getList(listId))!;
+    });
+  }
+
+  @override
   Future<void> renameList({required String id, required String title}) async {
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) {

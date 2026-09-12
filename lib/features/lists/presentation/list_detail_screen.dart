@@ -116,10 +116,25 @@ class ListDetailScreen extends ConsumerWidget {
           ),
         );
         if (!context.mounted || accepted == null) return;
-        // TASK-052 applies `accepted` back into this list; for now,
-        // acknowledge acceptance without changing anything yet.
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('Changes accepted.')));
+
+        final messenger = ScaffoldMessenger.of(context);
+        try {
+          await ref
+              .read(listRepositoryProvider)
+              .applyGeneratedListModification(
+                listId: record.id,
+                modified: accepted,
+              );
+          messenger.showSnackBar(
+            const SnackBar(content: Text('List updated.')),
+          );
+        } catch (_) {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Could not apply the changes. Please try again.'),
+            ),
+          );
+        }
       case AiGenerationError(:final failure):
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(failure.message)));

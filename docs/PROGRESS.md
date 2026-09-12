@@ -4,6 +4,71 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-052 complete (Milestone 5 finished)
+
+**Done:** Added `ListRepository.applyGeneratedListModification({listId,
+modified})` and its `DriftListRepository` implementation, wired into
+`ListDetailScreen._askAiToModify`'s accept branch in place of the
+TASK-051 stub SnackBar. Within one `_db.transaction()`: reads the
+list's current items (joined through its sections), deletes all
+existing sections (cascading to their items, same FK behavior already
+used by `deleteList`), updates the list's title/description, then
+re-inserts `modified`'s sections/items with fresh IDs -- an empty
+`modified.sections` still gets one default section, matching every
+other list-creation path's "every list needs at least one section"
+invariant.
+
+**Completion-state matching strategy** (documented on the interface
+method, per `AI_CONTRACT.md`'s explicit deferral to this task): an
+item in `modified` keeps its existing completion only when its
+trimmed text exactly matches an existing item's trimmed text, and
+each existing item can satisfy at most one match --- implemented as a
+per-text queue of existing items' completion values, consumed
+first-available as new items are inserted. This means: an unchanged
+item stays checked/unchecked as it was; a reworded item is
+indistinguishable from a brand-new one and starts unchecked; and two
+new items with identical text to one old completed item only let the
+first one inherit that completion, never both. The AI is structurally
+incapable of setting completion itself --- `GeneratedItem` has no
+completion field at all, so there's nothing for it to set.
+
+Since the whole apply runs in one transaction, a failure partway
+through leaves the list, its sections, and its items completely as
+they were --- `ListDetailScreen`'s `try`/`catch` around the call
+shows an inline error and changes nothing further.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (208/208 passing, up from 201). New
+`applyGeneratedListModification` group in
+`drift_list_repository_test.dart` (6 tests): replaces title/
+description/sections/items; preserves completion only for an
+exact-text match and never for new items; a reworded item starts
+unchecked; duplicate matching text only preserves completion once;
+an empty modification still yields one usable section; a
+poisoned-`idGenerator` mid-transaction failure leaves the original
+list, its section, and its item's completion completely intact. New
+widget test in `list_detail_screen_ai_modify_test.dart`: accepting a
+proposed result (add one item, keep one) actually persists it and
+preserves the pre-existing item's completion, with a "List updated."
+confirmation. Also manually verified on the Android emulator: checked
+an item, asked AI to modify (fake service, echoing the list
+unchanged), tapped "Apply changes", and confirmed both the "List
+updated." snackbar and that the checked item stayed checked.
+
+**Milestone 5 --- AI List Editing is now complete**: the modification
+contract reuses the exact same `GeneratedList`/validator/preview
+machinery as generation, "Ask AI to change this list" is a first-class
+list action with its own reviewed preview, and accepting a
+modification is atomic with a deliberately defined, tested
+completion-preservation rule.
+
+**Next:** Milestone 6 --- UX and Reliability, starting with TASK-060
+(search and basic organization) or TASK-061 (undo for destructive
+actions) per `docs/PLAN.md`'s dependency ordering --- both depend only
+on TASK-017, which has been complete since Milestone 1.
+
+---
+
 ## 2026-09-12 --- TASK-051 complete
 
 **Done:** Added the "Ask AI to change this list" entry point to

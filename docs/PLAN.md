@@ -324,7 +324,7 @@ list exactly. - Widget tests use fake AI.
 
 **Dependencies:** TASK-050.
 
-### [ ] TASK-052 --- Apply approved AI modification
+### [x] TASK-052 --- Apply approved AI modification
 
 **Goal:** Safely replace/update list content after approval.
 

@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -157,10 +158,56 @@ void main() {
       expect(find.text('Eggs'), findsOneWidget);
       expect(find.text('Apply changes (2 items)'), findsOneWidget);
 
-      // Nothing is applied to the real list yet -- that's TASK-052.
+      // Opening the preview must not apply anything by itself.
       final items = await database.select(database.listItems).get();
       expect(items, hasLength(1));
       expect(items.single.content, 'Milk');
+    },
+  );
+
+  driftTestWidgets(
+    'accepting the proposed result applies it, preserving completion for '
+    'the matched item',
+    (tester) async {
+      final service = ListGenerationServiceStub(
+        modifyResult: (snapshot, instruction) => const AiGenerationSuccess(
+          GeneratedList(
+            title: 'Groceries',
+            sections: [
+              GeneratedSection(
+                items: [
+                  GeneratedItem(text: 'Milk'),
+                  GeneratedItem(text: 'Bread'),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+
+      await (database.update(database.listItems)
+            ..where((tbl) => tbl.id.equals('item-1')))
+          .write(const ListItemsCompanion(completed: Value(true)));
+
+      await pumpDetailScreen(tester, service: service);
+      await openAiModifyDialog(tester);
+
+      await tester.enterText(dialogTextField(), 'add bread');
+      await tester.pump();
+      await tester.tap(find.text('Ask AI'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Apply changes (2 items)'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(GeneratedListPreviewScreen), findsNothing);
+      expect(find.text('List updated.'), findsOneWidget);
+
+      final items = await database.select(database.listItems).get();
+      final byContent = {for (final i in items) i.content: i};
+      expect(byContent.keys, {'Milk', 'Bread'});
+      expect(byContent['Milk']!.completed, isTrue);
+      expect(byContent['Bread']!.completed, isFalse);
     },
   );
 
