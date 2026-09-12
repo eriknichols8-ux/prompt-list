@@ -344,4 +344,58 @@ void main() {
       expect(restored.archivedAt, isNull);
     },
   );
+
+  driftTestWidgets(
+    'saving as a template copies the current structure, not completion',
+    (tester) async {
+      await database
+          .into(database.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: 'item-1',
+              sectionId: 'section-1',
+              content: 'Milk',
+              sortOrder: 1000,
+              createdAt: DateTime.now(),
+              completed: const Value(true),
+            ),
+          );
+
+      await pumpDetailScreen(tester);
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save as template'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Save as template'), findsWidgets);
+      final dialogField = find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.byType(TextField),
+      );
+      expect(
+        tester.widget<TextField>(dialogField).controller!.text,
+        'Groceries',
+      );
+      await tester.tap(find.text('Save'));
+      // _saveAsTemplate's async chain (reading sections/items, then
+      // writing the template) isn't tied to anything this screen
+      // watches, so no frame gets scheduled while it runs; a plain
+      // pumpAndSettle() can return before it finishes. Pump with a
+      // real duration a few times to give it room to complete.
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saved as "Groceries"'), findsOneWidget);
+
+      final templates = await database.select(database.templates).get();
+      expect(templates, hasLength(1));
+      expect(templates.single.name, 'Groceries');
+
+      final templateItems = await database.select(database.templateItems).get();
+      expect(templateItems.single.content, 'Milk');
+      // Completion state never existed on the template row to begin
+      // with; the schema itself has no such column.
+    },
+  );
 }

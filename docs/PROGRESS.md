@@ -4,6 +4,68 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-033 complete
+
+**Done:** Added `saveListAsTemplate` (a plain top-level function,
+`lib/features/templates/domain/save_list_as_template.dart`, not a
+repository method): takes `SectionRepository`+`ListItemRepository`+
+`TemplateRepository` plus a `listId`/`name`/`description`, reads the
+list's current sections/items, groups items by section, and calls the
+existing `TemplateRepository.createTemplate` with the resulting
+`TemplateSectionInput`s --- completion state is dropped simply because
+nothing about `ListItemRecord.completed` is ever read into a
+`TemplateSectionInput`. Kept as a standalone function rather than a
+method on either repository since it's a genuine cross-feature
+orchestration with no natural single owner; `createTemplate` already
+had everything it needed.
+
+Wired a "Save as template" action into `ListDetailScreen`'s menu:
+`SaveAsTemplateDialog` (pre-filled with the list's current title,
+blank rejected) then `saveListAsTemplate`, with a confirmation
+SnackBar. "Template name can be edited" was already satisfied by
+TASK-030's `renameTemplate`, usable via TASK-034's upcoming management
+UI.
+
+**A real bug found and fixed while testing this:** `saveListAsTemplate`
+originally read the list's structure via
+`sectionRepository.watchSections(listId).first` /
+`itemRepository.watchItems(listId).first` --- reactive `.watch()`
+streams, subscribed to and immediately cancelled just to grab one
+value. This isn't just wasteful: it made the widget test for "Save as
+template" genuinely flaky, because nothing in `ListDetailScreen`
+watches those providers, so the chain's completion wasn't tied to any
+frame Flutter's `pumpAndSettle()` would wait for. Fixed by adding
+proper one-shot reads --- `SectionRepository.getSections` and
+`ListItemRepository.getItems` --- mirroring the `getX`/`watchX` pairing
+`ListRepository` and `TemplateRepository` already use, and switching
+`saveListAsTemplate` to them. General lesson: a `.watch(...).first`
+call is a code smell wherever a plain one-shot read would do; prefer
+adding (or reusing) a real `getX` method.
+
+**Also discovered:** `flutter test`'s default concurrency
+intermittently hangs on this machine when running the full suite
+(multiple widget-test isolates in parallel appear to contend for
+resources) --- several full-suite runs this session stalled
+indefinitely partway through with no error, only recovering when
+re-run with `flutter test --concurrency=1`. That flag reliably runs
+the whole suite start to finish (slower, but deterministic) and
+incidentally also eliminates the cosmetic cross-file test-name
+mislabeling noted since TASK-002. Recommended for this project's
+verification runs on this machine going forward.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (117/117 passing, up from 111). New
+`save_list_as_template_test.dart` covers copying sections/items while
+dropping completion, multiple sections, and the full acceptance-
+criterion flow: list → template → new list, confirming the new list's
+copy starts unchecked and that editing it afterward mutates neither
+the template nor the original source list. New widget test drives the
+actual "Save as template" menu action end to end.
+
+**Next:** TASK-034 --- template management UI.
+
+---
+
 ## 2026-09-12 --- TASK-032 complete
 
 **Done:** Added `ListRepository.createListFromTemplate(TemplateWithSections)`:

@@ -18,6 +18,11 @@ abstract interface class ListItemRepository {
   /// deriving a per-section grouping alongside `SectionRepository`.
   Stream<List<ListItemRecord>> watchItems(String listId);
 
+  /// Reads [listId]'s current items once, in the same order as
+  /// [watchItems]. Prefer this over `watchItems(listId).first` for a
+  /// one-shot read.
+  Future<List<ListItemRecord>> getItems(String listId);
+
   /// Adds an item with [text] to [listId]'s first section (by sort
   /// order). Useful for the common single-section list, where the
   /// caller does not need to think about sections at all.

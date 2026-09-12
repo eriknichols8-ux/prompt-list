@@ -33,6 +33,19 @@ class DriftListItemRepository implements ListItemRepository {
   }
 
   @override
+  Future<List<ListItemRecord>> getItems(String listId) async {
+    final query = _db.select(_db.listItems).join(_sectionJoin())
+      ..where(_db.sections.listId.equals(listId))
+      ..orderBy([
+        OrderingTerm.asc(_db.sections.sortOrder),
+        OrderingTerm.asc(_db.listItems.sortOrder),
+      ]);
+
+    final rows = await query.get();
+    return rows.map((row) => row.readTable(_db.listItems)).toList();
+  }
+
+  @override
   Future<ListItemRecord> addItem({
     required String listId,
     required String text,

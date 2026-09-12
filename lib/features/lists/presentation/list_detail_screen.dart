@@ -8,8 +8,17 @@ import 'package:promptlist/features/lists/presentation/list_providers.dart';
 import 'package:promptlist/features/lists/presentation/move_to_section_dialog.dart';
 import 'package:promptlist/features/lists/presentation/rename_list_dialog.dart';
 import 'package:promptlist/features/lists/presentation/section_dialog.dart';
+import 'package:promptlist/features/templates/domain/save_list_as_template.dart';
+import 'package:promptlist/features/templates/presentation/save_as_template_dialog.dart';
+import 'package:promptlist/features/templates/presentation/template_providers.dart';
 
-enum _ListMenuAction { rename, addSection, clearCompleted, delete }
+enum _ListMenuAction {
+  rename,
+  addSection,
+  clearCompleted,
+  saveAsTemplate,
+  delete,
+}
 
 /// Shows a single list: its items, with add/edit/delete/complete and
 /// drag-and-drop reordering, grouped into sections once a list has
@@ -54,6 +63,28 @@ class ListDetailScreen extends ConsumerWidget {
     );
     if (!confirmed) return;
     await ref.read(listItemRepositoryProvider).clearCompleted(listId);
+  }
+
+  Future<void> _saveAsTemplate(
+    BuildContext context,
+    WidgetRef ref,
+    ListRecord record,
+  ) async {
+    final name = await showSaveAsTemplateDialog(
+      context,
+      initialName: record.title,
+    );
+    if (name == null || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    await saveListAsTemplate(
+      sectionRepository: ref.read(sectionRepositoryProvider),
+      itemRepository: ref.read(listItemRepositoryProvider),
+      templateRepository: ref.read(templateRepositoryProvider),
+      listId: record.id,
+      name: name,
+    );
+    messenger.showSnackBar(SnackBar(content: Text('Saved as "$name"')));
   }
 
   Future<void> _delete(
@@ -113,6 +144,8 @@ class ListDetailScreen extends ConsumerWidget {
                         _addSection(context, ref);
                       case _ListMenuAction.clearCompleted:
                         _clearCompleted(context, ref);
+                      case _ListMenuAction.saveAsTemplate:
+                        _saveAsTemplate(context, ref, record);
                       case _ListMenuAction.delete:
                         _delete(context, ref, record);
                     }
@@ -129,6 +162,10 @@ class ListDetailScreen extends ConsumerWidget {
                     PopupMenuItem(
                       value: _ListMenuAction.clearCompleted,
                       child: Text('Clear completed'),
+                    ),
+                    PopupMenuItem(
+                      value: _ListMenuAction.saveAsTemplate,
+                      child: Text('Save as template'),
                     ),
                     PopupMenuItem(
                       value: _ListMenuAction.delete,

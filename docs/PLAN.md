@@ -197,7 +197,7 @@ Tests verify independence.
 
 **Dependencies:** TASK-031.
 
-### [ ] TASK-033 --- Save list as user template
+### [x] TASK-033 --- Save list as user template
 
 **Goal:** Turn an existing list into a reusable template.
 

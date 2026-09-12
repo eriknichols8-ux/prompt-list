@@ -28,6 +28,11 @@ class DriftSectionRepository implements SectionRepository {
   }
 
   @override
+  Future<List<SectionRecord>> getSections(String listId) {
+    return _orderedQuery(listId).get();
+  }
+
+  @override
   Future<SectionRecord> createSection({
     required String listId,
     String? title,

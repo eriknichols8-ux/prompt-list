@@ -21,6 +21,13 @@ abstract interface class SectionRepository {
   /// Emits the current sections of [listId], ordered for display.
   Stream<List<SectionRecord>> watchSections(String listId);
 
+  /// Reads [listId]'s current sections once, in the same order as
+  /// [watchSections]. Prefer this over `watchSections(listId).first`
+  /// for a one-shot read: subscribing to and then cancelling a watch
+  /// stream just to take its first value needlessly exercises the
+  /// reactive-query machinery for something that isn't reactive.
+  Future<List<SectionRecord>> getSections(String listId);
+
   /// Creates a section in [listId] with optional [title], appended
   /// after the list's existing sections.
   Future<SectionRecord> createSection({required String listId, String? title});

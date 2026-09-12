@@ -421,4 +421,15 @@ void main() {
       expect(emissions.last, ['Milk', 'Eggs']);
     });
   });
+
+  group('getItems', () {
+    test('reads the current items in the same order as watchItems', () async {
+      await repository.addItem(listId: listId, text: 'Milk');
+      await repository.addItem(listId: listId, text: 'Eggs');
+
+      final items = await repository.getItems(listId);
+
+      expect(items.map((i) => i.content).toList(), ['Milk', 'Eggs']);
+    });
+  });
 }

@@ -207,4 +207,18 @@ void main() {
       expect(emissions.last, ['Produce']);
     });
   });
+
+  group('getSections', () {
+    test(
+      'reads the current sections in the same order as watchSections',
+      () async {
+        await repository.createSection(listId: listId, title: 'Produce');
+        await repository.createSection(listId: listId, title: 'Dairy');
+
+        final sections = await repository.getSections(listId);
+
+        expect(sections.map((s) => s.title).toList(), ['Produce', 'Dairy']);
+      },
+    );
+  });
 }
