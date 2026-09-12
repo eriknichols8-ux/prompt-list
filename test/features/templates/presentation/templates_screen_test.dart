@@ -32,7 +32,46 @@ void main() {
     expect(find.text('No templates yet.'), findsOneWidget);
   });
 
-  driftTestWidgets('shows templates with a built-in tag for built-in ones', (
+  driftTestWidgets(
+    'groups built-in and user templates under separate headings',
+    (tester) async {
+      final now = DateTime.now();
+      await database
+          .into(database.templates)
+          .insert(
+            TemplatesCompanion.insert(
+              id: 'template-1',
+              name: 'Grocery Run',
+              isBuiltIn: const Value(true),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+      await database
+          .into(database.templates)
+          .insert(
+            TemplatesCompanion.insert(
+              id: 'template-2',
+              name: 'My Custom List',
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      await pumpTemplatesScreen(tester);
+
+      expect(find.text('Built-in'), findsOneWidget);
+      expect(find.text('My Templates'), findsOneWidget);
+      expect(find.text('Grocery Run'), findsOneWidget);
+      expect(find.text('My Custom List'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Built-in')).dy,
+        lessThan(tester.getTopLeft(find.text('My Templates')).dy),
+      );
+    },
+  );
+
+  driftTestWidgets('omits the "My Templates" heading when there are none', (
     tester,
   ) async {
     final now = DateTime.now();
@@ -47,22 +86,11 @@ void main() {
             updatedAt: now,
           ),
         );
-    await database
-        .into(database.templates)
-        .insert(
-          TemplatesCompanion.insert(
-            id: 'template-2',
-            name: 'My Custom List',
-            createdAt: now,
-            updatedAt: now,
-          ),
-        );
 
     await pumpTemplatesScreen(tester);
 
-    expect(find.text('Grocery Run'), findsOneWidget);
-    expect(find.text('My Custom List'), findsOneWidget);
     expect(find.text('Built-in'), findsOneWidget);
+    expect(find.text('My Templates'), findsNothing);
   });
 
   driftTestWidgets('tapping a template opens its detail screen', (

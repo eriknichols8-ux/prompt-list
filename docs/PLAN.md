@@ -207,7 +207,7 @@ be edited. - Tests cover list → template → new list flow.
 
 **Dependencies:** TASK-032.
 
-### [ ] TASK-034 --- Template management UI
+### [x] TASK-034 --- Template management UI
 
 **Goal:** Browse and manage templates.
 

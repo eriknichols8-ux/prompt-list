@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:promptlist/core/database/app_database.dart';
+import 'package:promptlist/core/ui/confirm_dialog.dart';
 import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
 import 'package:promptlist/features/lists/presentation/list_providers.dart';
 import 'package:promptlist/features/templates/domain/template_repository.dart';
+import 'package:promptlist/features/templates/presentation/rename_template_dialog.dart';
 import 'package:promptlist/features/templates/presentation/template_providers.dart';
 
+enum _TemplateMenuAction { rename, delete }
+
 /// Previews a template's structure and lets the user create an
-/// independent list from it.
+/// independent list from it. User templates can also be renamed or
+/// deleted from here; built-in templates show no such menu at all,
+/// since they are immutable (see TASK-031).
 class TemplateDetailScreen extends ConsumerWidget {
   const TemplateDetailScreen({required this.templateId, super.key});
 
@@ -26,9 +33,48 @@ class TemplateDetailScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _rename(
+    BuildContext context,
+    WidgetRef ref,
+    TemplateRecord template,
+  ) async {
+    final newName = await showRenameTemplateDialog(
+      context,
+      initialName: template.name,
+    );
+    if (newName == null) return;
+    await ref
+        .read(templateRepositoryProvider)
+        .renameTemplate(templateId: template.id, name: newName);
+  }
+
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    TemplateRecord template,
+  ) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete this template?',
+      message: '"${template.name}" will be deleted. This cannot be undone.',
+      confirmLabel: 'Delete',
+    );
+    if (!confirmed || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    await ref.read(templateRepositoryProvider).deleteTemplate(template.id);
+    navigator.pop();
+    messenger.showSnackBar(
+      SnackBar(content: Text('Deleted "${template.name}"')),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final template = ref.watch(templateProvider(templateId));
+    final withSections = template.value;
+    final record = withSections?.template;
 
     return Scaffold(
       appBar: AppBar(
@@ -37,6 +83,31 @@ class TemplateDetailScreen extends ConsumerWidget {
           loading: () => const Text('Template'),
           error: (_, _) => const Text('Template'),
         ),
+        actions: (record == null || record.isBuiltIn)
+            ? null
+            : [
+                PopupMenuButton<_TemplateMenuAction>(
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (action) {
+                    switch (action) {
+                      case _TemplateMenuAction.rename:
+                        _rename(context, ref, record);
+                      case _TemplateMenuAction.delete:
+                        _delete(context, ref, record);
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: _TemplateMenuAction.rename,
+                      child: Text('Rename'),
+                    ),
+                    PopupMenuItem(
+                      value: _TemplateMenuAction.delete,
+                      child: Text('Delete template'),
+                    ),
+                  ],
+                ),
+              ],
       ),
       body: template.when(
         data: (withSections) {

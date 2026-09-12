@@ -99,4 +99,84 @@ void main() {
       ]);
     },
   );
+
+  driftTestWidgets('renaming a user template updates the app bar', (
+    tester,
+  ) async {
+    await pumpDetailScreen(tester);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+
+    final dialogField = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogField, 'Weekly Groceries');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(AppBar, 'Weekly Groceries'), findsOneWidget);
+  });
+
+  driftTestWidgets(
+    'deleting a user template confirms, pops back, and removes it',
+    (tester) async {
+      await tester.pumpWidget(
+        wrapWithProviders(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          TemplateDetailScreen(templateId: templateId),
+                    ),
+                  ),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+          database: database,
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete template'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete this template?'), findsOneWidget);
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TemplateDetailScreen), findsNothing);
+      expect(find.text('Deleted "Grocery Run"'), findsOneWidget);
+      expect(await templateRepository.getTemplate(templateId), isNull);
+    },
+  );
+
+  driftTestWidgets('a built-in template shows no management menu', (
+    tester,
+  ) async {
+    final builtIn = await templateRepository.createTemplate(
+      name: 'Built-in Template',
+      isBuiltIn: true,
+    );
+    await tester.pumpWidget(
+      wrapWithProviders(
+        MaterialApp(home: TemplateDetailScreen(templateId: builtIn.id)),
+        database: database,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.more_vert), findsNothing);
+  });
 }

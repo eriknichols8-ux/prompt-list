@@ -40,12 +40,34 @@ class _TemplatesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    final theme = Theme.of(context);
+    // watchTemplates() already orders built-ins first, then
+    // alphabetically, so a stable partition preserves that order
+    // within each group.
+    final builtIns = templates.where((t) => t.isBuiltIn).toList();
+    final userTemplates = templates.where((t) => !t.isBuiltIn).toList();
+
+    return ListView(
       padding: const EdgeInsets.all(16),
-      itemCount: templates.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, index) =>
-          _TemplateCard(template: templates[index]),
+      children: [
+        if (builtIns.isNotEmpty) ...[
+          Text('Built-in', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          for (final template in builtIns) ...[
+            _TemplateCard(template: template),
+            const SizedBox(height: 12),
+          ],
+          const SizedBox(height: 8),
+        ],
+        if (userTemplates.isNotEmpty) ...[
+          Text('My Templates', style: theme.textTheme.titleSmall),
+          const SizedBox(height: 8),
+          for (final template in userTemplates) ...[
+            _TemplateCard(template: template),
+            const SizedBox(height: 12),
+          ],
+        ],
+      ],
     );
   }
 }
@@ -74,33 +96,7 @@ class _TemplateCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      template.name,
-                      style: theme.textTheme.titleMedium,
-                    ),
-                  ),
-                  if (template.isBuiltIn)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.secondaryContainer,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'Built-in',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSecondaryContainer,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              Text(template.name, style: theme.textTheme.titleMedium),
               if (template.description != null) ...[
                 const SizedBox(height: 4),
                 Text(template.description!, style: theme.textTheme.bodySmall),

@@ -4,6 +4,42 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-034 complete (Milestone 3 finished)
+
+**Done:** `TemplatesScreen` now groups templates under "Built-in" and
+"My Templates" headings (each omitted when empty) instead of a flat
+list with a per-card tag --- more literally "easy to browse" than a
+tag buried in each card, and `watchTemplates()` already sorted
+built-ins first so the partition just splits on that existing order.
+
+`TemplateDetailScreen` gained a management menu (Rename, Delete ---
+`rename_template_dialog.dart` new, blank rejected; delete confirms
+first via the existing `showConfirmDialog` before calling
+`deleteTemplate` and popping back with a SnackBar) shown **only** for
+user templates --- built-ins render no menu at all, so
+`TemplateRepository`'s existing "built-ins are immutable" guard
+(TASK-030/031) stays a defensive backstop rather than something a
+normal user could ever actually trigger, the same pattern already
+used for "delete the only section" in TASK-021.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (121/121 passing, up from 117). Updated
+`templates_screen_test.dart`'s grouping test (now checks both
+headings render, in the right vertical order, and that "My Templates"
+disappears when there are no user templates) and added rename/delete
+widget tests to `template_detail_screen_test.dart`, plus a check that
+a built-in template shows no `more_vert` menu at all.
+
+**Milestone 3 --- Templates is now complete**: schema/repository,
+5 built-in templates, create-list-from-template, save-list-as-
+template, and full template browsing/management, all covered by
+automated tests.
+
+**Next:** Milestone 4 --- AI Generation Foundation, starting with
+TASK-040 (AI domain contract).
+
+---
+
 ## 2026-09-12 --- TASK-033 complete
 
 **Done:** Added `saveListAsTemplate` (a plain top-level function,
