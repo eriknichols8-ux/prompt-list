@@ -4,6 +4,68 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-070 complete (Milestone 7 started)
+
+**Done:** Added a dedicated `test/integration/` directory implementing
+the four critical flows `docs/TESTING.md` requires "by release
+milestone" as a single, explicit, discoverable set --- distinct from
+the many scattered widget tests that happen to touch pieces of the
+same journeys:
+
+-   `manual_list_flow_test.dart` --- create a list from the Lists home
+    screen via the real FAB flow, add three items through the UI,
+    reorder one, complete another, then genuinely tear down the widget
+    tree (`pumpWidget(SizedBox.shrink())` + a fresh `pumpWidget` for
+    the same list id against the same in-memory database) and confirm
+    order and completion both survived independently of any
+    in-widget-memory state. Reordering uses the accessible "Move down"
+    semantics action added in TASK-062 rather than a pixel-distance
+    drag gesture --- drag mechanics are already covered precisely
+    elsewhere, and tuning an exact drag offset to land on one specific
+    slot proved flaky (a 3-item `ReorderableListView`'s per-slot
+    threshold isn't simply "one row height"), while the semantic
+    action moves exactly one slot deterministically by construction.
+-   `template_flow_test.dart` --- `TemplatesScreen` → tap a template →
+    `TemplateDetailScreen` → "Create list" → edit the new list
+    (complete an item, add one) → verify via both a direct repository
+    read and by navigating back into the template's own preview that
+    it shows its original, unedited structure.
+-   `ai_generation_flow_test.dart` --- both flow 3 (fake AI prompt →
+    preview → accept → saved list that then behaves completely
+    normally, verified by toggling a checkbox on the newly-created
+    list and confirming it persists) and flow 4 (fake AI prompt →
+    preview → cancel → `lists`/`sections`/`listItems` all empty) in
+    one file, since they share setup and are the two sides of the same
+    journey. Only `FakeListGenerationService` is used, per this
+    project's "no automated test may require a real AI API key" rule.
+
+**Investigated and fixed while wiring this up:** `flutter test`
+repeatedly appeared to hang on this machine for several minutes with
+zero output. The actual cause was piping through `tail`, which buffers
+until the underlying process exits (a previously-documented gotcha),
+combined with an accumulated pile of orphaned `dart.exe`/`dartvm.exe`/
+`flutter_tester.exe` processes left over from many earlier `flutter
+run`/`flutter test` invocations across this long session, which were
+holding a lock on `build/native_assets/windows/sqlite3.dll` and
+causing every subsequent `flutter test` invocation to fail outright
+before running anything. Killing those stray processes (Flutter SDK
+tooling workers only, nothing user-facing) before each `flutter test`
+run resolved it.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (231/231 passing, up from 227, all four new
+integration tests included and passing on a from-scratch run).
+
+**Next:** TASK-071 --- data migration safety (confirm migration
+coverage exists for every schema version introduced so far; a v1→v2
+migration test already exists from TASK-030, so this is mostly an
+audit) or TASK-072 --- production AI secret architecture (document/
+implement a secure path for a distributable build, since `.env` +
+`--dart-define-from-file` is explicitly a development-only mechanism
+per `docs/ARCHITECTURE.md`).
+
+---
+
 ## 2026-09-12 --- TASK-063 complete (Milestone 6 finished)
 
 **Done:** Found the real gap immediately: `PromptListApp` had a

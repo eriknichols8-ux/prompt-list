@@ -381,7 +381,7 @@ contrast. - Widget tests cover representative theme rendering.
 
 ## Milestone 7 --- Release Readiness
 
-### [ ] TASK-070 --- Critical integration flows
+### [x] TASK-070 --- Critical integration flows
 
 **Goal:** Protect the product's highest-value journeys.
 
