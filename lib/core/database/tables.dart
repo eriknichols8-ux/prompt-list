@@ -48,3 +48,47 @@ class ListItems extends Table {
   @override
   Set<Column> get primaryKey => {id};
 }
+
+/// A reusable list structure, independent of any list instantiated
+/// from it: templates never carry completion state (see
+/// [TemplateItems]), and editing an instantiated list never mutates
+/// the template it came from.
+@DataClassName('TemplateRecord')
+class Templates extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get description => text().nullable()();
+  BoolColumn get isBuiltIn => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DataClassName('TemplateSectionRecord')
+class TemplateSections extends Table {
+  TextColumn get id => text()();
+  TextColumn get templateId =>
+      text().references(Templates, #id, onDelete: KeyAction.cascade)();
+  TextColumn get title => text().nullable()();
+  IntColumn get sortOrder => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A template's reusable item text. Intentionally has no completion
+/// or completedAt columns --- those only make sense for an active
+/// [ListItems] row.
+@DataClassName('TemplateItemRecord')
+class TemplateItems extends Table {
+  TextColumn get id => text()();
+  TextColumn get sectionId =>
+      text().references(TemplateSections, #id, onDelete: KeyAction.cascade)();
+  TextColumn get content => text()();
+  IntColumn get sortOrder => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

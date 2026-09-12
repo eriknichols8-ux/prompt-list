@@ -1256,12 +1256,1061 @@ class ListItemsCompanion extends UpdateCompanion<ListItemRecord> {
   }
 }
 
+class $TemplatesTable extends Templates
+    with TableInfo<$TemplatesTable, TemplateRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TemplatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+    'name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isBuiltInMeta = const VerificationMeta(
+    'isBuiltIn',
+  );
+  @override
+  late final GeneratedColumn<bool> isBuiltIn = GeneratedColumn<bool>(
+    'is_built_in',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_built_in" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    name,
+    description,
+    isBuiltIn,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'templates';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TemplateRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+        _nameMeta,
+        name.isAcceptableOrUnknown(data['name']!, _nameMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_built_in')) {
+      context.handle(
+        _isBuiltInMeta,
+        isBuiltIn.isAcceptableOrUnknown(data['is_built_in']!, _isBuiltInMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TemplateRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TemplateRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      name: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}name'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      ),
+      isBuiltIn: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_built_in'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $TemplatesTable createAlias(String alias) {
+    return $TemplatesTable(attachedDatabase, alias);
+  }
+}
+
+class TemplateRecord extends DataClass implements Insertable<TemplateRecord> {
+  final String id;
+  final String name;
+  final String? description;
+  final bool isBuiltIn;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const TemplateRecord({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.isBuiltIn,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
+    }
+    map['is_built_in'] = Variable<bool>(isBuiltIn);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  TemplatesCompanion toCompanion(bool nullToAbsent) {
+    return TemplatesCompanion(
+      id: Value(id),
+      name: Value(name),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
+      isBuiltIn: Value(isBuiltIn),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory TemplateRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TemplateRecord(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      description: serializer.fromJson<String?>(json['description']),
+      isBuiltIn: serializer.fromJson<bool>(json['isBuiltIn']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'description': serializer.toJson<String?>(description),
+      'isBuiltIn': serializer.toJson<bool>(isBuiltIn),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  TemplateRecord copyWith({
+    String? id,
+    String? name,
+    Value<String?> description = const Value.absent(),
+    bool? isBuiltIn,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) => TemplateRecord(
+    id: id ?? this.id,
+    name: name ?? this.name,
+    description: description.present ? description.value : this.description,
+    isBuiltIn: isBuiltIn ?? this.isBuiltIn,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  TemplateRecord copyWithCompanion(TemplatesCompanion data) {
+    return TemplateRecord(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      isBuiltIn: data.isBuiltIn.present ? data.isBuiltIn.value : this.isBuiltIn,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateRecord(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('isBuiltIn: $isBuiltIn, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, description, isBuiltIn, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TemplateRecord &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.description == this.description &&
+          other.isBuiltIn == this.isBuiltIn &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class TemplatesCompanion extends UpdateCompanion<TemplateRecord> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> description;
+  final Value<bool> isBuiltIn;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const TemplatesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.description = const Value.absent(),
+    this.isBuiltIn = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TemplatesCompanion.insert({
+    required String id,
+    required String name,
+    this.description = const Value.absent(),
+    this.isBuiltIn = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       name = Value(name),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<TemplateRecord> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? description,
+    Expression<bool>? isBuiltIn,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (description != null) 'description': description,
+      if (isBuiltIn != null) 'is_built_in': isBuiltIn,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TemplatesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? name,
+    Value<String?>? description,
+    Value<bool>? isBuiltIn,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return TemplatesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      isBuiltIn: isBuiltIn ?? this.isBuiltIn,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (isBuiltIn.present) {
+      map['is_built_in'] = Variable<bool>(isBuiltIn.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplatesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('description: $description, ')
+          ..write('isBuiltIn: $isBuiltIn, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TemplateSectionsTable extends TemplateSections
+    with TableInfo<$TemplateSectionsTable, TemplateSectionRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TemplateSectionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _templateIdMeta = const VerificationMeta(
+    'templateId',
+  );
+  @override
+  late final GeneratedColumn<String> templateId = GeneratedColumn<String>(
+    'template_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES templates (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, templateId, title, sortOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'template_sections';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TemplateSectionRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('template_id')) {
+      context.handle(
+        _templateIdMeta,
+        templateId.isAcceptableOrUnknown(data['template_id']!, _templateIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_templateIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TemplateSectionRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TemplateSectionRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      templateId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}template_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      ),
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $TemplateSectionsTable createAlias(String alias) {
+    return $TemplateSectionsTable(attachedDatabase, alias);
+  }
+}
+
+class TemplateSectionRecord extends DataClass
+    implements Insertable<TemplateSectionRecord> {
+  final String id;
+  final String templateId;
+  final String? title;
+  final int sortOrder;
+  const TemplateSectionRecord({
+    required this.id,
+    required this.templateId,
+    this.title,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['template_id'] = Variable<String>(templateId);
+    if (!nullToAbsent || title != null) {
+      map['title'] = Variable<String>(title);
+    }
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  TemplateSectionsCompanion toCompanion(bool nullToAbsent) {
+    return TemplateSectionsCompanion(
+      id: Value(id),
+      templateId: Value(templateId),
+      title: title == null && nullToAbsent
+          ? const Value.absent()
+          : Value(title),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory TemplateSectionRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TemplateSectionRecord(
+      id: serializer.fromJson<String>(json['id']),
+      templateId: serializer.fromJson<String>(json['templateId']),
+      title: serializer.fromJson<String?>(json['title']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'templateId': serializer.toJson<String>(templateId),
+      'title': serializer.toJson<String?>(title),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  TemplateSectionRecord copyWith({
+    String? id,
+    String? templateId,
+    Value<String?> title = const Value.absent(),
+    int? sortOrder,
+  }) => TemplateSectionRecord(
+    id: id ?? this.id,
+    templateId: templateId ?? this.templateId,
+    title: title.present ? title.value : this.title,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  TemplateSectionRecord copyWithCompanion(TemplateSectionsCompanion data) {
+    return TemplateSectionRecord(
+      id: data.id.present ? data.id.value : this.id,
+      templateId: data.templateId.present
+          ? data.templateId.value
+          : this.templateId,
+      title: data.title.present ? data.title.value : this.title,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateSectionRecord(')
+          ..write('id: $id, ')
+          ..write('templateId: $templateId, ')
+          ..write('title: $title, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, templateId, title, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TemplateSectionRecord &&
+          other.id == this.id &&
+          other.templateId == this.templateId &&
+          other.title == this.title &&
+          other.sortOrder == this.sortOrder);
+}
+
+class TemplateSectionsCompanion extends UpdateCompanion<TemplateSectionRecord> {
+  final Value<String> id;
+  final Value<String> templateId;
+  final Value<String?> title;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const TemplateSectionsCompanion({
+    this.id = const Value.absent(),
+    this.templateId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TemplateSectionsCompanion.insert({
+    required String id,
+    required String templateId,
+    this.title = const Value.absent(),
+    required int sortOrder,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       templateId = Value(templateId),
+       sortOrder = Value(sortOrder);
+  static Insertable<TemplateSectionRecord> custom({
+    Expression<String>? id,
+    Expression<String>? templateId,
+    Expression<String>? title,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (templateId != null) 'template_id': templateId,
+      if (title != null) 'title': title,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TemplateSectionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? templateId,
+    Value<String?>? title,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return TemplateSectionsCompanion(
+      id: id ?? this.id,
+      templateId: templateId ?? this.templateId,
+      title: title ?? this.title,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (templateId.present) {
+      map['template_id'] = Variable<String>(templateId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateSectionsCompanion(')
+          ..write('id: $id, ')
+          ..write('templateId: $templateId, ')
+          ..write('title: $title, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $TemplateItemsTable extends TemplateItems
+    with TableInfo<$TemplateItemsTable, TemplateItemRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $TemplateItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sectionIdMeta = const VerificationMeta(
+    'sectionId',
+  );
+  @override
+  late final GeneratedColumn<String> sectionId = GeneratedColumn<String>(
+    'section_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES template_sections (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, sectionId, content, sortOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'template_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<TemplateItemRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('section_id')) {
+      context.handle(
+        _sectionIdMeta,
+        sectionId.isAcceptableOrUnknown(data['section_id']!, _sectionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sectionIdMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  TemplateItemRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return TemplateItemRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      sectionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}section_id'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $TemplateItemsTable createAlias(String alias) {
+    return $TemplateItemsTable(attachedDatabase, alias);
+  }
+}
+
+class TemplateItemRecord extends DataClass
+    implements Insertable<TemplateItemRecord> {
+  final String id;
+  final String sectionId;
+  final String content;
+  final int sortOrder;
+  const TemplateItemRecord({
+    required this.id,
+    required this.sectionId,
+    required this.content,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['section_id'] = Variable<String>(sectionId);
+    map['content'] = Variable<String>(content);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  TemplateItemsCompanion toCompanion(bool nullToAbsent) {
+    return TemplateItemsCompanion(
+      id: Value(id),
+      sectionId: Value(sectionId),
+      content: Value(content),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory TemplateItemRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return TemplateItemRecord(
+      id: serializer.fromJson<String>(json['id']),
+      sectionId: serializer.fromJson<String>(json['sectionId']),
+      content: serializer.fromJson<String>(json['content']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sectionId': serializer.toJson<String>(sectionId),
+      'content': serializer.toJson<String>(content),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  TemplateItemRecord copyWith({
+    String? id,
+    String? sectionId,
+    String? content,
+    int? sortOrder,
+  }) => TemplateItemRecord(
+    id: id ?? this.id,
+    sectionId: sectionId ?? this.sectionId,
+    content: content ?? this.content,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  TemplateItemRecord copyWithCompanion(TemplateItemsCompanion data) {
+    return TemplateItemRecord(
+      id: data.id.present ? data.id.value : this.id,
+      sectionId: data.sectionId.present ? data.sectionId.value : this.sectionId,
+      content: data.content.present ? data.content.value : this.content,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateItemRecord(')
+          ..write('id: $id, ')
+          ..write('sectionId: $sectionId, ')
+          ..write('content: $content, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sectionId, content, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is TemplateItemRecord &&
+          other.id == this.id &&
+          other.sectionId == this.sectionId &&
+          other.content == this.content &&
+          other.sortOrder == this.sortOrder);
+}
+
+class TemplateItemsCompanion extends UpdateCompanion<TemplateItemRecord> {
+  final Value<String> id;
+  final Value<String> sectionId;
+  final Value<String> content;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const TemplateItemsCompanion({
+    this.id = const Value.absent(),
+    this.sectionId = const Value.absent(),
+    this.content = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  TemplateItemsCompanion.insert({
+    required String id,
+    required String sectionId,
+    required String content,
+    required int sortOrder,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       sectionId = Value(sectionId),
+       content = Value(content),
+       sortOrder = Value(sortOrder);
+  static Insertable<TemplateItemRecord> custom({
+    Expression<String>? id,
+    Expression<String>? sectionId,
+    Expression<String>? content,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sectionId != null) 'section_id': sectionId,
+      if (content != null) 'content': content,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  TemplateItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? sectionId,
+    Value<String>? content,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return TemplateItemsCompanion(
+      id: id ?? this.id,
+      sectionId: sectionId ?? this.sectionId,
+      content: content ?? this.content,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sectionId.present) {
+      map['section_id'] = Variable<String>(sectionId.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('TemplateItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('sectionId: $sectionId, ')
+          ..write('content: $content, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ListsTable lists = $ListsTable(this);
   late final $SectionsTable sections = $SectionsTable(this);
   late final $ListItemsTable listItems = $ListItemsTable(this);
+  late final $TemplatesTable templates = $TemplatesTable(this);
+  late final $TemplateSectionsTable templateSections = $TemplateSectionsTable(
+    this,
+  );
+  late final $TemplateItemsTable templateItems = $TemplateItemsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1270,6 +2319,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     lists,
     sections,
     listItems,
+    templates,
+    templateSections,
+    templateItems,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -1286,6 +2338,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('list_items', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'templates',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('template_sections', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'template_sections',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('template_items', kind: UpdateKind.delete)],
     ),
   ]);
   @override
@@ -2364,6 +3430,1037 @@ typedef $$ListItemsTableProcessedTableManager =
       ListItemRecord,
       PrefetchHooks Function({bool sectionId})
     >;
+typedef $$TemplatesTableCreateCompanionBuilder = TemplatesCompanion Function({
+  required String id,
+  required String name,
+  Value<String?> description,
+  Value<bool> isBuiltIn,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<int> rowid,
+});
+typedef $$TemplatesTableUpdateCompanionBuilder = TemplatesCompanion Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String?> description,
+  Value<bool> isBuiltIn,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+final class $$TemplatesTableReferences
+    extends BaseReferences<_$AppDatabase, $TemplatesTable, TemplateRecord> {
+  $$TemplatesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<
+    $TemplateSectionsTable,
+    List<TemplateSectionRecord>
+  >
+  _templateSectionsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.templateSections,
+    aliasName: 'templates__id__template_sections__template_id',
+  );
+
+  $$TemplateSectionsTableProcessedTableManager get templateSectionsRefs {
+    final manager = $$TemplateSectionsTableTableManager(
+      $_db,
+      $_db.templateSections,
+    ).filter((f) => f.templateId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _templateSectionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$TemplatesTableFilterComposer
+    extends Composer<_$AppDatabase, $TemplatesTable> {
+  $$TemplatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isBuiltIn => $composableBuilder(
+    column: $table.isBuiltIn,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> templateSectionsRefs(
+    Expression<bool> Function($$TemplateSectionsTableFilterComposer f) f,
+  ) {
+    final $$TemplateSectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateSections,
+      getReferencedColumn: (t) => t.templateId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateSectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.templateSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TemplatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $TemplatesTable> {
+  $$TemplatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get name => $composableBuilder(
+    column: $table.name,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isBuiltIn => $composableBuilder(
+    column: $table.isBuiltIn,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$TemplatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TemplatesTable> {
+  $$TemplatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isBuiltIn =>
+      $composableBuilder(column: $table.isBuiltIn, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> templateSectionsRefs<T extends Object>(
+    Expression<T> Function($$TemplateSectionsTableAnnotationComposer a) f,
+  ) {
+    final $$TemplateSectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateSections,
+      getReferencedColumn: (t) => t.templateId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateSectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.templateSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TemplatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TemplatesTable,
+          TemplateRecord,
+          $$TemplatesTableFilterComposer,
+          $$TemplatesTableOrderingComposer,
+          $$TemplatesTableAnnotationComposer,
+          $$TemplatesTableCreateCompanionBuilder,
+          $$TemplatesTableUpdateCompanionBuilder,
+          (TemplateRecord, $$TemplatesTableReferences),
+          TemplateRecord,
+          PrefetchHooks Function({bool templateSectionsRefs})
+        > {
+  $$TemplatesTableTableManager(_$AppDatabase db, $TemplatesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TemplatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TemplatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TemplatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> name = const Value.absent(),
+                Value<String?> description = const Value.absent(),
+                Value<bool> isBuiltIn = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TemplatesCompanion(
+                id: id,
+                name: name,
+                description: description,
+                isBuiltIn: isBuiltIn,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String name,
+                Value<String?> description = const Value.absent(),
+                Value<bool> isBuiltIn = const Value.absent(),
+                required DateTime createdAt,
+                required DateTime updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => TemplatesCompanion.insert(
+                id: id,
+                name: name,
+                description: description,
+                isBuiltIn: isBuiltIn,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TemplatesTable, TemplateRecord>(table),
+                  $$TemplatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({templateSectionsRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (templateSectionsRefs) db.templateSections,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (templateSectionsRefs)
+                    await $_getPrefetchedData<
+                      TemplateRecord,
+                      $TemplatesTable,
+                      TemplateSectionRecord
+                    >(
+                      currentTable: table,
+                      referencedTable: $$TemplatesTableReferences
+                          ._templateSectionsRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$TemplatesTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).templateSectionsRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where((e) => e.templateId == item.id),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TemplatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TemplatesTable,
+      TemplateRecord,
+      $$TemplatesTableFilterComposer,
+      $$TemplatesTableOrderingComposer,
+      $$TemplatesTableAnnotationComposer,
+      $$TemplatesTableCreateCompanionBuilder,
+      $$TemplatesTableUpdateCompanionBuilder,
+      (TemplateRecord, $$TemplatesTableReferences),
+      TemplateRecord,
+      PrefetchHooks Function({bool templateSectionsRefs})
+    >;
+typedef $$TemplateSectionsTableCreateCompanionBuilder =
+    TemplateSectionsCompanion Function({
+      required String id,
+      required String templateId,
+      Value<String?> title,
+      required int sortOrder,
+      Value<int> rowid,
+    });
+typedef $$TemplateSectionsTableUpdateCompanionBuilder =
+    TemplateSectionsCompanion Function({
+      Value<String> id,
+      Value<String> templateId,
+      Value<String?> title,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+final class $$TemplateSectionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $TemplateSectionsTable,
+          TemplateSectionRecord
+        > {
+  $$TemplateSectionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TemplatesTable _templateIdTable(_$AppDatabase db) =>
+      db.templates.createAlias('template_sections__template_id__templates__id');
+
+  $$TemplatesTableProcessedTableManager get templateId {
+    final $_column = $_itemColumn<String>('template_id')!;
+
+    final manager = $$TemplatesTableTableManager(
+      $_db,
+      $_db.templates,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_templateIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$TemplateItemsTable, List<TemplateItemRecord>>
+  _templateItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.templateItems,
+    aliasName: 'template_sections__id__template_items__section_id',
+  );
+
+  $$TemplateItemsTableProcessedTableManager get templateItemsRefs {
+    final manager = $$TemplateItemsTableTableManager(
+      $_db,
+      $_db.templateItems,
+    ).filter((f) => f.sectionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_templateItemsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$TemplateSectionsTableFilterComposer
+    extends Composer<_$AppDatabase, $TemplateSectionsTable> {
+  $$TemplateSectionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TemplatesTableFilterComposer get templateId {
+    final $$TemplatesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.templateId,
+      referencedTable: $db.templates,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplatesTableFilterComposer(
+            $db: $db,
+            $table: $db.templates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> templateItemsRefs(
+    Expression<bool> Function($$TemplateItemsTableFilterComposer f) f,
+  ) {
+    final $$TemplateItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateItems,
+      getReferencedColumn: (t) => t.sectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.templateItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TemplateSectionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TemplateSectionsTable> {
+  $$TemplateSectionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TemplatesTableOrderingComposer get templateId {
+    final $$TemplatesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.templateId,
+      referencedTable: $db.templates,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplatesTableOrderingComposer(
+            $db: $db,
+            $table: $db.templates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateSectionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TemplateSectionsTable> {
+  $$TemplateSectionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  $$TemplatesTableAnnotationComposer get templateId {
+    final $$TemplatesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.templateId,
+      referencedTable: $db.templates,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplatesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.templates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> templateItemsRefs<T extends Object>(
+    Expression<T> Function($$TemplateItemsTableAnnotationComposer a) f,
+  ) {
+    final $$TemplateItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.templateItems,
+      getReferencedColumn: (t) => t.sectionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.templateItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$TemplateSectionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TemplateSectionsTable,
+          TemplateSectionRecord,
+          $$TemplateSectionsTableFilterComposer,
+          $$TemplateSectionsTableOrderingComposer,
+          $$TemplateSectionsTableAnnotationComposer,
+          $$TemplateSectionsTableCreateCompanionBuilder,
+          $$TemplateSectionsTableUpdateCompanionBuilder,
+          (TemplateSectionRecord, $$TemplateSectionsTableReferences),
+          TemplateSectionRecord,
+          PrefetchHooks Function({bool templateId, bool templateItemsRefs})
+        > {
+  $$TemplateSectionsTableTableManager(
+    _$AppDatabase db,
+    $TemplateSectionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TemplateSectionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TemplateSectionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TemplateSectionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> templateId = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TemplateSectionsCompanion(
+                id: id,
+                templateId: templateId,
+                title: title,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String templateId,
+                Value<String?> title = const Value.absent(),
+                required int sortOrder,
+                Value<int> rowid = const Value.absent(),
+              }) => TemplateSectionsCompanion.insert(
+                id: id,
+                templateId: templateId,
+                title: title,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TemplateSectionsTable, TemplateSectionRecord>(
+                    table,
+                  ),
+                  $$TemplateSectionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({templateId = false, templateItemsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (templateItemsRefs) db.templateItems,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (templateId) {
+                          state = state.withJoin(
+                            currentTable: table,
+                            currentColumn: table.templateId,
+                            referencedTable: $$TemplateSectionsTableReferences
+                                ._templateIdTable(db),
+                            referencedColumn: $$TemplateSectionsTableReferences
+                                ._templateIdTable(db)
+                                .id,
+                          ) as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (templateItemsRefs)
+                        await $_getPrefetchedData<
+                          TemplateSectionRecord,
+                          $TemplateSectionsTable,
+                          TemplateItemRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$TemplateSectionsTableReferences
+                              ._templateItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$TemplateSectionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).templateItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sectionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$TemplateSectionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TemplateSectionsTable,
+      TemplateSectionRecord,
+      $$TemplateSectionsTableFilterComposer,
+      $$TemplateSectionsTableOrderingComposer,
+      $$TemplateSectionsTableAnnotationComposer,
+      $$TemplateSectionsTableCreateCompanionBuilder,
+      $$TemplateSectionsTableUpdateCompanionBuilder,
+      (TemplateSectionRecord, $$TemplateSectionsTableReferences),
+      TemplateSectionRecord,
+      PrefetchHooks Function({bool templateId, bool templateItemsRefs})
+    >;
+typedef $$TemplateItemsTableCreateCompanionBuilder =
+    TemplateItemsCompanion Function({
+      required String id,
+      required String sectionId,
+      required String content,
+      required int sortOrder,
+      Value<int> rowid,
+    });
+typedef $$TemplateItemsTableUpdateCompanionBuilder =
+    TemplateItemsCompanion Function({
+      Value<String> id,
+      Value<String> sectionId,
+      Value<String> content,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+final class $$TemplateItemsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $TemplateItemsTable, TemplateItemRecord> {
+  $$TemplateItemsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $TemplateSectionsTable _sectionIdTable(_$AppDatabase db) => db
+      .templateSections
+      .createAlias('template_items__section_id__template_sections__id');
+
+  $$TemplateSectionsTableProcessedTableManager get sectionId {
+    final $_column = $_itemColumn<String>('section_id')!;
+
+    final manager = $$TemplateSectionsTableTableManager(
+      $_db,
+      $_db.templateSections,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sectionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$TemplateItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $TemplateItemsTable> {
+  $$TemplateItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$TemplateSectionsTableFilterComposer get sectionId {
+    final $$TemplateSectionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sectionId,
+      referencedTable: $db.templateSections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateSectionsTableFilterComposer(
+            $db: $db,
+            $table: $db.templateSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $TemplateItemsTable> {
+  $$TemplateItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$TemplateSectionsTableOrderingComposer get sectionId {
+    final $$TemplateSectionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sectionId,
+      referencedTable: $db.templateSections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateSectionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.templateSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $TemplateItemsTable> {
+  $$TemplateItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+
+  $$TemplateSectionsTableAnnotationComposer get sectionId {
+    final $$TemplateSectionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sectionId,
+      referencedTable: $db.templateSections,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$TemplateSectionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.templateSections,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$TemplateItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $TemplateItemsTable,
+          TemplateItemRecord,
+          $$TemplateItemsTableFilterComposer,
+          $$TemplateItemsTableOrderingComposer,
+          $$TemplateItemsTableAnnotationComposer,
+          $$TemplateItemsTableCreateCompanionBuilder,
+          $$TemplateItemsTableUpdateCompanionBuilder,
+          (TemplateItemRecord, $$TemplateItemsTableReferences),
+          TemplateItemRecord,
+          PrefetchHooks Function({bool sectionId})
+        > {
+  $$TemplateItemsTableTableManager(_$AppDatabase db, $TemplateItemsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$TemplateItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$TemplateItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$TemplateItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> sectionId = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => TemplateItemsCompanion(
+                id: id,
+                sectionId: sectionId,
+                content: content,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String sectionId,
+                required String content,
+                required int sortOrder,
+                Value<int> rowid = const Value.absent(),
+              }) => TemplateItemsCompanion.insert(
+                id: id,
+                sectionId: sectionId,
+                content: content,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$TemplateItemsTable, TemplateItemRecord>(table),
+                  $$TemplateItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({sectionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (sectionId) {
+                      state = state.withJoin(
+                        currentTable: table,
+                        currentColumn: table.sectionId,
+                        referencedTable: $$TemplateItemsTableReferences
+                            ._sectionIdTable(db),
+                        referencedColumn: $$TemplateItemsTableReferences
+                            ._sectionIdTable(db)
+                            .id,
+                      ) as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$TemplateItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $TemplateItemsTable,
+      TemplateItemRecord,
+      $$TemplateItemsTableFilterComposer,
+      $$TemplateItemsTableOrderingComposer,
+      $$TemplateItemsTableAnnotationComposer,
+      $$TemplateItemsTableCreateCompanionBuilder,
+      $$TemplateItemsTableUpdateCompanionBuilder,
+      (TemplateItemRecord, $$TemplateItemsTableReferences),
+      TemplateItemRecord,
+      PrefetchHooks Function({bool sectionId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2374,4 +4471,10 @@ class $AppDatabaseManager {
       $$SectionsTableTableManager(_db, _db.sections);
   $$ListItemsTableTableManager get listItems =>
       $$ListItemsTableTableManager(_db, _db.listItems);
+  $$TemplatesTableTableManager get templates =>
+      $$TemplatesTableTableManager(_db, _db.templates);
+  $$TemplateSectionsTableTableManager get templateSections =>
+      $$TemplateSectionsTableTableManager(_db, _db.templateSections);
+  $$TemplateItemsTableTableManager get templateItems =>
+      $$TemplateItemsTableTableManager(_db, _db.templateItems);
 }

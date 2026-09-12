@@ -11,8 +11,8 @@ void main() {
 
   tearDown(() => database.close());
 
-  test('opens at schema version 1', () {
-    expect(database.schemaVersion, 1);
+  test('opens at the current schema version', () {
+    expect(database.schemaVersion, 2);
   });
 
   test('creates and reads a list', () async {

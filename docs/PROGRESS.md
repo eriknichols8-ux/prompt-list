@@ -4,6 +4,65 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-030 complete (Milestone 3 started)
+
+**Done:** Added the schema for reusable templates --- `Templates`,
+`TemplateSections`, `TemplateItems` (`lib/core/database/tables.dart`)
+--- structurally mirroring `Lists`/`Sections`/`ListItems` but with no
+`completed`/`completedAt` columns at all on `TemplateItems`, so
+"template data is separate from active list completion state" is
+enforced by the schema itself, not just by convention.
+`Templates.isBuiltIn` (default `false`) distinguishes built-in from
+user templates for TASK-031's editing rules. This is schema v2:
+bumped `AppDatabase.schemaVersion` to `2` and added an `onUpgrade` step
+that creates the three new tables when migrating from v1 --- purely
+additive, so existing data is untouched.
+
+**Migration test:** added a `V1Database` fixture
+(`test/core/database/fixtures/v1_database.dart`, `@DriftDatabase`
+over just `Lists`/`Sections`/`ListItems` at `schemaVersion 1`, reusing
+the real table classes so the fixture can't drift from the real v1
+schema) used only to build a v1 SQLite file on disk, populate it with
+a list/section/(completed) item, close it, then reopen the same file
+with the real `AppDatabase` (v2) and confirm: all v1 data survives
+unchanged, and the new template tables exist and are immediately
+usable. This is the pattern to reuse for every future schema bump ---
+`TESTING.md` requires it and TASK-071 will require it for every
+version introduced along the way.
+
+**Repository:** Added `TemplateRepository`/`DriftTemplateRepository`
+(`lib/features/templates/domain/template_repository.dart`,
+`lib/features/templates/data/drift_template_repository.dart`).
+Templates are built and read as a *whole structure* in one call
+(`createTemplate(name, description?, isBuiltIn?, sections:
+[TemplateSectionInput(title?, items: [...])])` /
+`getTemplate`/`watchTemplate` returning a `TemplateWithSections` tree)
+rather than through per-section/per-item CRUD --- nothing in the
+product plan calls for interactively editing a template's contents
+piece by piece, only creating one wholesale (built-ins in TASK-031,
+"save list as template" in TASK-033) and reading one wholesale (to
+instantiate a list in TASK-032), so a smaller CRUD surface here avoids
+building machinery nothing will use. `renameTemplate`/`deleteTemplate`
+throw `TemplateValidationException` for a built-in template --- built-
+ins are immutable from the start, ahead of TASK-031 actually shipping
+any.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (99/99 passing, up from 84). Also fixed a genuinely-stale
+existing test (`app_database_test.dart`'s schema-version assertion,
+hardcoded to `1`) to assert the real current version rather than
+weakening or deleting it, per `TESTING.md`'s failure policy: the
+requirement legitimately changed and is documented above.
+`drift_template_repository_test.dart` covers name/description
+trimming and blank-name rejection, nested section/item ordering,
+`watchTemplate` reacting to a rename, `watchTemplates` ordering
+(built-ins first, then alphabetical), and the built-in
+rename/delete guard.
+
+**Next:** TASK-031 --- built-in templates.
+
+---
+
 ## 2026-09-12 --- TASK-020 and TASK-021 complete (Milestone 2 finished)
 
 **Implemented together, in one commit:** TASK-021 (section UI) depends

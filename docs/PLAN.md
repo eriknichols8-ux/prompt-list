@@ -164,7 +164,7 @@ forced on the user. - Widget tests cover primary interactions.
 
 ## Milestone 3 --- Templates
 
-### [ ] TASK-030 --- Template schema and repository
+### [x] TASK-030 --- Template schema and repository
 
 **Goal:** Persist reusable templates.
 
