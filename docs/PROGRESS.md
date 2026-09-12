@@ -4,6 +4,41 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-010 complete (Milestone 1 started)
+
+**Done:** Added the real schema v1 in `lib/core/database/tables.dart`:
+`Lists`, `Sections`, `ListItems`, matching `ARCHITECTURE.md`'s core
+data model. Notes on two intentional naming deviations from the doc's
+plain-English field names, both purely internal to the generated code:
+
+- The `Lists` table uses `@DataClassName('ListRecord')` so Drift's
+  auto-derived singular row class is `ListRecord`, not `List` --- which
+  would otherwise collide with `dart:core`'s `List`.
+- `ListItems`' text field is the column `content`, not `text`, because
+  `text()` is already `Table`'s column-builder method; a getter named
+  `text` cannot coexist with the inherited `text()` method Dart
+  requires to define it. Domain-level code introduced in later tasks
+  can still call this "item text" in its own API.
+
+`Sections.listId` and `ListItems.sectionId` are foreign keys with
+`onDelete: KeyAction.cascade`; `AppDatabase.migration.beforeOpen` turns
+on `PRAGMA foreign_keys = ON` so SQLite actually enforces it (off by
+default per-connection). `schemaVersion` stays `1` --- this is the
+first real schema, so there is nothing to migrate from yet; future
+schema changes must bump it and extend `migration` per
+`ARCHITECTURE.md`.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (11/11 passing). `test/core/database/app_database_test.dart`
+covers: schema version, creating/reading a list, a section under a
+list, an item under a section (completion defaults false, sort order
+and timestamps stored correctly), and that deleting a list cascades to
+its sections and items.
+
+**Next:** TASK-011 --- list repository CRUD.
+
+---
+
 ## 2026-09-12 --- TASK-003 complete (Milestone 0 finished)
 
 **Done:** Added `RootShell` (`lib/app/root_shell.dart`): a Material 3

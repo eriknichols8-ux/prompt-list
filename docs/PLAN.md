@@ -54,7 +54,7 @@ primary navigation.
 
 ## Milestone 1 --- Local List Foundation
 
-### [ ] TASK-010 --- Database schema v1
+### [x] TASK-010 --- Database schema v1
 
 **Goal:** Persist lists, sections, and list items.
 

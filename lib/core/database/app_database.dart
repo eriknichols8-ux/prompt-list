@@ -1,19 +1,28 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'tables.dart';
+
 part 'app_database.g.dart';
 
 /// The application's local Drift/SQLite database.
 ///
-/// Tables are added starting with TASK-010 (database schema v1). This
-/// class exists ahead of that so the Riverpod + Drift plumbing can be
-/// verified independently of the domain schema.
-@DriftDatabase(tables: [])
+/// Schema v1 defines [Lists], [Sections], and [ListItems]. Any future
+/// schema change must bump [schemaVersion] and add a step to
+/// [migration] per ARCHITECTURE.md.
+@DriftDatabase(tables: [Lists, Sections, ListItems])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
   int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    beforeOpen: (details) async {
+      await customStatement('PRAGMA foreign_keys = ON');
+    },
+  );
 
   static QueryExecutor _openConnection() {
     return driftDatabase(name: 'promptlist');
