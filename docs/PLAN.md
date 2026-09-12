@@ -231,7 +231,7 @@ provider dependency leaks into UI/domain tests.
 
 **Dependencies:** TASK-002.
 
-### [ ] TASK-041 --- AI structured response validator
+### [x] TASK-041 --- AI structured response validator
 
 **Goal:** Safely convert model output into a preview model.
 

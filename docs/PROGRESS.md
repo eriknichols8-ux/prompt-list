@@ -4,6 +4,51 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-041 complete
+
+**Done:** Added `GeneratedListValidator`
+(`lib/features/ai_generation/domain/generated_list_validator.dart`),
+implementing the response side of `AI_CONTRACT.md`. `validate(String)`
+JSON-decodes a raw provider response and delegates to `validateMap`
+for structural validation; both return an `AiGenerationResult` so a
+rejected payload is reported as a typed
+`AiGenerationFailureType.invalidResponse` rather than a thrown
+exception. Enforces every documented limit as a named constant
+(`titleMaxLength` 120, `descriptionMaxLength` 1000, `maxSections` 50,
+`sectionTitleMaxLength` 120, `maxTotalItems` 500, `itemTextMaxLength`
+500): missing/blank/wrong-typed `title`, `sections`, or item `text`
+are rejected; optional `description` and section `title` trim
+whitespace and normalize a blank value to `null` (per the contract's
+allowed normalization); item/section/root type mismatches, empty
+sections/items arrays, and any limit overrun are rejected with a
+specific message. Deliberately does not attempt to repair or guess at
+malformed content, matching the contract's "must not silently invent
+missing text" rule.
+
+Scoped to response validation only, not prompt validation --- prompt
+entry/rejection belongs to TASK-042 (prompt screen), even though
+`AI_CONTRACT.md` documents both limits together.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (153/153 passing, up from 127). New
+`test/features/ai_generation/domain/generated_list_validator_test.dart`
+covers every fixture category from `AI_CONTRACT.md`'s Test Fixtures
+list except the provider-error wrapper (that belongs to TASK-045's
+provider adapter, which maps transport/provider errors before they
+ever reach this validator): simple list, sectioned list, Unicode text,
+maximum-size boundary (title/description/section-title/item-text all
+at their max length, 50 sections x 10 items = 500 total items),
+malformed JSON, non-object JSON root, wrong types (title, description,
+sections, section, items, item text), blank title/item text, missing
+required fields, too many sections, too many total items, and each
+overlong-field case.
+
+**Next:** TASK-042 --- AI prompt screen (capture the user's request,
+reject empty prompts, use `FakeListGenerationService` in widget
+tests).
+
+---
+
 ## 2026-09-12 --- TASK-040 complete (Milestone 4 started)
 
 **Done:** Added the provider-independent AI generation contract under
