@@ -25,6 +25,10 @@ abstract interface class ListRepository {
 
   Future<ListRecord?> getList(String id);
 
+  /// Emits the list identified by [id] whenever it changes (including
+  /// rename and archive/unarchive), or `null` if it does not exist.
+  Stream<ListRecord?> watchList(String id);
+
   /// Creates a list with [title] and optional [description], along with
   /// a single default section so items can be added immediately.
   ///
@@ -39,4 +43,13 @@ abstract interface class ListRepository {
   /// Deletes the list identified by [id] and (via cascade) its sections
   /// and items.
   Future<void> deleteList(String id);
+
+  /// Soft-deletes the list identified by [id]: stamps `archivedAt` so
+  /// it drops out of [watchLists]/[watchListSummaries] without
+  /// destroying any data, so the user-facing "delete list" action can
+  /// safely offer undo via [unarchiveList].
+  Future<void> archiveList(String id);
+
+  /// Reverses [archiveList], restoring the list to normal visibility.
+  Future<void> unarchiveList(String id);
 }

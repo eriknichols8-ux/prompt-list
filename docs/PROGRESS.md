@@ -4,6 +4,74 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-017 complete (Milestone 1 finished)
+
+**Done:** `ListDetailScreen` now has a `PopupMenuButton` (explicit
+`Icons.more_vert`, not the platform-adaptive default, so it renders
+identically everywhere and is easy to find in tests) with three
+actions:
+
+- **Rename** --- `RenameListDialog` (same shape as `CreateListDialog`/
+  `EditItemDialog`: pre-filled, Save disabled while blank) calling the
+  existing `ListRepository.renameList`.
+- **Clear completed** --- confirmation dialog (`showConfirmDialog`, new
+  shared helper at `lib/core/ui/confirm_dialog.dart`) then
+  `ListItemRepository.clearCompleted`.
+- **Delete list** --- confirmation dialog, then *soft*-deletes via a
+  new `ListRepository.archiveList` (stamps `archivedAt`, matching the
+  schema field `ARCHITECTURE.md` already reserved for this), pops back
+  to the Lists screen, and shows a SnackBar with an Undo action calling
+  the new `unarchiveList`. Existing `deleteList` (hard delete) is
+  untouched and still used/tested from TASK-011. `_EmptyItemsState`
+  (empty-list body) got an icon to match the Lists screen's empty
+  state; the literal empty-state text is unchanged so existing tests
+  still pass.
+
+**Two real bugs found and fixed while testing this, both worth
+remembering:**
+
+1. The delete/undo SnackBar's `onPressed` originally called
+   `ref.read(listRepositoryProvider)` from inside the callback ---  but
+   by the time the user taps "Undo", `ListDetailScreen` has already
+   been popped and disposed, and using its `ref` after that throws.
+   Fixed by reading the repository *once*, before popping, and
+   capturing that instance in the closure instead of `ref` itself.
+   General lesson: never capture `ref` in a callback meant to run after
+   the widget that owns it is expected to be gone --- capture the value
+   you need from it instead.
+2. `listByIdProvider` (from TASK-013) was a `FutureProvider.family` ---
+   a one-shot fetch. Renaming a list never updated the app bar title,
+   because nothing re-ran that fetch. Added
+   `ListRepository.watchList(id)` (a `Stream<ListRecord?>`, `null` if
+   the list doesn't exist) and switched `listByIdProvider` to
+   `StreamProvider.family` over it. Same category of gap as TASK-015's
+   `watchListSummaries` fix: a provider that only fetches once will
+   silently go stale the moment something adds a way to mutate the
+   data it depends on.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (62/62 passing). New repository tests: `archiveList`/
+`unarchiveList` (hides/restores without touching sections or items,
+and `watchLists` reactivity), `watchList` (reactive to rename), and
+`clearCompleted` (removes only completed items, no-op when none are).
+New widget tests: renaming via the menu updates the app bar, clearing
+completed after confirmation, and the full delete → confirm → pop →
+undo flow (this last one is what caught bug #1 above --- it hung for
+several minutes before failing, because the thrown exception inside
+the gesture handler left the test's gesture arena in a bad state; a
+quick `flutter analyze`/logic read wouldn't have caught it, only
+actually driving the interaction did).
+
+**Milestone 1 --- Local List Foundation is now complete**: manual lists
+support full create/read/rename/delete (with undo), item add/edit/
+delete/complete/reorder, and list-level management, all backed by
+Drift/SQLite and covered by 62 automated tests.
+
+**Next:** Milestone 2 --- Sections, starting with TASK-020 (section
+domain/repository operations).
+
+---
+
 ## 2026-09-12 --- TASK-016 complete
 
 **Done:** Added `ListItemRepository.reorderItem({listId, oldIndex,

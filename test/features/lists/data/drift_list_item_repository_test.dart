@@ -133,6 +133,28 @@ void main() {
     });
   });
 
+  group('clearCompleted', () {
+    test('removes only completed items', () async {
+      final milk = await repository.addItem(listId: listId, text: 'Milk');
+      await repository.addItem(listId: listId, text: 'Eggs');
+      await repository.setItemCompleted(itemId: milk.id, completed: true);
+
+      await repository.clearCompleted(listId);
+
+      final remaining = await repository.watchItems(listId).first;
+      expect(remaining.map((item) => item.content).toList(), ['Eggs']);
+    });
+
+    test('does nothing when no items are completed', () async {
+      await repository.addItem(listId: listId, text: 'Milk');
+
+      await repository.clearCompleted(listId);
+
+      final remaining = await repository.watchItems(listId).first;
+      expect(remaining, hasLength(1));
+    });
+  });
+
   group('reorderItem', () {
     Future<List<String>> orderedContents() async {
       final items = await repository.watchItems(listId).first;

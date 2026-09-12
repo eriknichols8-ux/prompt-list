@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -227,4 +228,120 @@ void main() {
     expect(find.text('Milk'), findsNothing);
     expect(find.text('No items yet. Add one below.'), findsOneWidget);
   });
+
+  driftTestWidgets('renaming a list via the menu updates its title', (
+    tester,
+  ) async {
+    await pumpDetailScreen(tester);
+    expect(find.widgetWithText(AppBar, 'Groceries'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rename'));
+    await tester.pumpAndSettle();
+
+    final dialogField = find.descendant(
+      of: find.byType(AlertDialog),
+      matching: find.byType(TextField),
+    );
+    await tester.enterText(dialogField, 'Weekly Shop');
+    await tester.pump();
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(find.widgetWithText(AppBar, 'Weekly Shop'), findsOneWidget);
+  });
+
+  driftTestWidgets('clearing completed removes only completed items', (
+    tester,
+  ) async {
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-1',
+            sectionId: 'section-1',
+            content: 'Milk',
+            sortOrder: 1000,
+            createdAt: DateTime.now(),
+            completed: const Value(true),
+          ),
+        );
+    await database
+        .into(database.listItems)
+        .insert(
+          ListItemsCompanion.insert(
+            id: 'item-2',
+            sectionId: 'section-1',
+            content: 'Eggs',
+            sortOrder: 2000,
+            createdAt: DateTime.now(),
+          ),
+        );
+
+    await pumpDetailScreen(tester);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Clear completed'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Clear completed items?'), findsOneWidget);
+    await tester.tap(find.text('Clear'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Milk'), findsNothing);
+    expect(find.text('Eggs'), findsOneWidget);
+  });
+
+  driftTestWidgets(
+    'deleting a list confirms, navigates back, and can be undone',
+    (tester) async {
+      await tester.pumpWidget(
+        wrapWithProviders(
+          MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const ListDetailScreen(listId: listId),
+                    ),
+                  ),
+                  child: const Text('Open'),
+                ),
+              ),
+            ),
+          ),
+          database: database,
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete list'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Delete this list?'), findsOneWidget);
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ListDetailScreen), findsNothing);
+      expect(find.text('Deleted "Groceries"'), findsOneWidget);
+
+      final archived = await (database.select(
+        database.lists,
+      )..where((tbl) => tbl.id.equals(listId))).getSingle();
+      expect(archived.archivedAt, isNotNull);
+
+      await tester.tap(find.text('Undo'));
+      await tester.pumpAndSettle();
+
+      final restored = await (database.select(
+        database.lists,
+      )..where((tbl) => tbl.id.equals(listId))).getSingle();
+      expect(restored.archivedAt, isNull);
+    },
+  );
 }

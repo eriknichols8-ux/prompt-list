@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promptlist/core/database/app_database.dart';
+import 'package:promptlist/core/ui/confirm_dialog.dart';
 import 'package:promptlist/features/lists/presentation/edit_item_dialog.dart';
 import 'package:promptlist/features/lists/presentation/list_providers.dart';
+import 'package:promptlist/features/lists/presentation/rename_list_dialog.dart';
+
+enum _ListMenuAction { rename, clearCompleted, delete }
 
 /// Shows a single list: its items, with add/edit/delete/complete and
 /// drag-and-drop reordering. Sections are built out starting in
@@ -12,9 +16,68 @@ class ListDetailScreen extends ConsumerWidget {
 
   final String listId;
 
+  Future<void> _rename(
+    BuildContext context,
+    WidgetRef ref,
+    ListRecord record,
+  ) async {
+    final newTitle = await showRenameListDialog(
+      context,
+      initialTitle: record.title,
+    );
+    if (newTitle == null) return;
+    await ref
+        .read(listRepositoryProvider)
+        .renameList(id: record.id, title: newTitle);
+  }
+
+  Future<void> _clearCompleted(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Clear completed items?',
+      message: 'Completed items in this list will be removed.',
+      confirmLabel: 'Clear',
+    );
+    if (!confirmed) return;
+    await ref.read(listItemRepositoryProvider).clearCompleted(listId);
+  }
+
+  Future<void> _delete(
+    BuildContext context,
+    WidgetRef ref,
+    ListRecord record,
+  ) async {
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Delete this list?',
+      message: '"${record.title}" and its items will be deleted.',
+      confirmLabel: 'Delete',
+    );
+    if (!confirmed || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+    // Capture the repository itself, not `ref`: by the time the user
+    // taps "Undo" this widget has been popped and disposed, so using
+    // the (now-invalid) `ref` in the callback would throw.
+    final listRepository = ref.read(listRepositoryProvider);
+    await listRepository.archiveList(record.id);
+    navigator.pop();
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text('Deleted "${record.title}"'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () => listRepository.unarchiveList(record.id),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final list = ref.watch(listByIdProvider(listId));
+    final record = list.value;
 
     return Scaffold(
       appBar: AppBar(
@@ -23,6 +86,37 @@ class ListDetailScreen extends ConsumerWidget {
           loading: () => const Text('List'),
           error: (_, _) => const Text('List'),
         ),
+        actions: record == null
+            ? null
+            : [
+                PopupMenuButton<_ListMenuAction>(
+                  icon: const Icon(Icons.more_vert),
+                  onSelected: (action) {
+                    switch (action) {
+                      case _ListMenuAction.rename:
+                        _rename(context, ref, record);
+                      case _ListMenuAction.clearCompleted:
+                        _clearCompleted(context, ref);
+                      case _ListMenuAction.delete:
+                        _delete(context, ref, record);
+                    }
+                  },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: _ListMenuAction.rename,
+                      child: Text('Rename'),
+                    ),
+                    PopupMenuItem(
+                      value: _ListMenuAction.clearCompleted,
+                      child: Text('Clear completed'),
+                    ),
+                    PopupMenuItem(
+                      value: _ListMenuAction.delete,
+                      child: Text('Delete list'),
+                    ),
+                  ],
+                ),
+              ],
       ),
       body: list.when(
         data: (record) {
@@ -45,6 +139,31 @@ class _ItemsBody extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<_ItemsBody> createState() => _ItemsBodyState();
+}
+
+class _EmptyItemsState extends StatelessWidget {
+  const _EmptyItemsState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.playlist_add_check_circle_outlined,
+              size: 48,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(height: 12),
+            const Text('No items yet. Add one below.'),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ItemsBodyState extends ConsumerState<_ItemsBody> {
@@ -107,7 +226,7 @@ class _ItemsBodyState extends ConsumerState<_ItemsBody> {
         Expanded(
           child: items.when(
             data: (items) => items.isEmpty
-                ? const Center(child: Text('No items yet. Add one below.'))
+                ? const _EmptyItemsState()
                 : ReorderableListView.builder(
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     buildDefaultDragHandles: false,

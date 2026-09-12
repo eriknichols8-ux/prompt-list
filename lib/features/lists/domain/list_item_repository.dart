@@ -42,6 +42,9 @@ abstract interface class ListItemRepository {
   /// Deletes the item identified by [itemId].
   Future<void> deleteItem(String itemId);
 
+  /// Deletes every completed item in [listId].
+  Future<void> clearCompleted(String listId);
+
   /// Moves the item at [oldIndex] (within [listId]'s current
   /// [watchItems] order) to [newIndex] in the resulting list, and
   /// persists the new order for every item in the list.

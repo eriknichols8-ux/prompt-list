@@ -70,6 +70,13 @@ class DriftListRepository implements ListRepository {
   }
 
   @override
+  Stream<ListRecord?> watchList(String id) {
+    return (_db.select(
+      _db.lists,
+    )..where((tbl) => tbl.id.equals(id))).watchSingleOrNull();
+  }
+
+  @override
   Future<ListRecord> createList({
     required String title,
     String? description,
@@ -132,5 +139,19 @@ class DriftListRepository implements ListRepository {
   @override
   Future<void> deleteList(String id) async {
     await (_db.delete(_db.lists)..where((tbl) => tbl.id.equals(id))).go();
+  }
+
+  @override
+  Future<void> archiveList(String id) async {
+    await (_db.update(_db.lists)..where((tbl) => tbl.id.equals(id))).write(
+      ListsCompanion(archivedAt: Value(DateTime.now())),
+    );
+  }
+
+  @override
+  Future<void> unarchiveList(String id) async {
+    await (_db.update(_db.lists)..where((tbl) => tbl.id.equals(id))).write(
+      const ListsCompanion(archivedAt: Value(null)),
+    );
   }
 }

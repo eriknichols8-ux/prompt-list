@@ -73,6 +73,28 @@ void main() {
     });
   });
 
+  group('watchList', () {
+    test('emits null when the list does not exist', () async {
+      expect(await repository.watchList('missing').first, isNull);
+    });
+
+    test('emits updates as the list is renamed', () async {
+      final created = await repository.createList(title: 'Groceries');
+      final emissions = <String?>[];
+      final subscription = repository.watchList(created.id).listen((list) {
+        emissions.add(list?.title);
+      });
+      addTearDown(subscription.cancel);
+
+      await pumpEventQueue();
+      expect(emissions.last, 'Groceries');
+
+      await repository.renameList(id: created.id, title: 'Weekly Shop');
+      await pumpEventQueue();
+      expect(emissions.last, 'Weekly Shop');
+    });
+  });
+
   group('renameList', () {
     test('updates the title and updatedAt', () async {
       final created = await repository.createList(title: 'Groceries');
@@ -123,6 +145,83 @@ void main() {
       expect(await database.select(database.sections).get(), isEmpty);
       expect(await database.select(database.listItems).get(), isEmpty);
     });
+  });
+
+  group('archiveList / unarchiveList', () {
+    test(
+      'archiving hides a list from getList results still returning it',
+      () async {
+        final created = await repository.createList(title: 'Groceries');
+
+        await repository.archiveList(created.id);
+
+        final archived = await repository.getList(created.id);
+        expect(
+          archived,
+          isNotNull,
+          reason: 'getList is not filtered by archivedAt',
+        );
+        expect(archived!.archivedAt, isNotNull);
+
+        final lists = await database.select(database.lists).get();
+        expect(lists.single.archivedAt, isNotNull);
+      },
+    );
+
+    test('unarchiving restores a list', () async {
+      final created = await repository.createList(title: 'Groceries');
+      await repository.archiveList(created.id);
+
+      await repository.unarchiveList(created.id);
+
+      final restored = await repository.getList(created.id);
+      expect(restored!.archivedAt, isNull);
+    });
+
+    test('does not delete sections or items', () async {
+      final created = await repository.createList(title: 'Groceries');
+      final section = await (database.select(
+        database.sections,
+      )..where((tbl) => tbl.listId.equals(created.id))).getSingle();
+      await database
+          .into(database.listItems)
+          .insert(
+            ListItemsCompanion.insert(
+              id: 'item-0',
+              sectionId: section.id,
+              content: 'Milk',
+              sortOrder: 1000,
+              createdAt: DateTime.now(),
+            ),
+          );
+
+      await repository.archiveList(created.id);
+
+      expect(await database.select(database.sections).get(), hasLength(1));
+      expect(await database.select(database.listItems).get(), hasLength(1));
+    });
+
+    test(
+      'watchLists excludes an archived list and includes it again on undo',
+      () async {
+        final created = await repository.createList(title: 'Groceries');
+        final emissions = <int>[];
+        final subscription = repository.watchLists().listen((lists) {
+          emissions.add(lists.length);
+        });
+        addTearDown(subscription.cancel);
+        await pumpEventQueue();
+        expect(emissions.last, 1);
+
+        await repository.archiveList(created.id);
+        await pumpEventQueue();
+        expect(emissions.last, 0);
+
+        await repository.unarchiveList(created.id);
+        await pumpEventQueue();
+        expect(emissions.last, 1);
+      },
+    );
   });
 
   group('watchLists', () {

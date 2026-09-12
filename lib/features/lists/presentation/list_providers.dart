@@ -18,9 +18,11 @@ final listSummariesProvider = StreamProvider<List<ListSummary>>((ref) {
   return ref.watch(listRepositoryProvider).watchListSummaries();
 });
 
-/// A single list by ID, for the list detail screen.
-final listByIdProvider = FutureProvider.family<ListRecord?, String>((ref, id) {
-  return ref.watch(listRepositoryProvider).getList(id);
+/// A single list by ID, for the list detail screen. Reactive so the
+/// screen reflects renames and archive/unarchive without a manual
+/// refresh.
+final listByIdProvider = StreamProvider.family<ListRecord?, String>((ref, id) {
+  return ref.watch(listRepositoryProvider).watchList(id);
 });
 
 /// The app-wide [ListItemRepository] instance.

@@ -129,7 +129,7 @@ source of truth.
 
 **Dependencies:** TASK-014.
 
-### [ ] TASK-017 --- List management polish
+### [x] TASK-017 --- List management polish
 
 **Goal:** Add essential list-level operations.
 

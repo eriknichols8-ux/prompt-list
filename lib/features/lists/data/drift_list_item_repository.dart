@@ -125,6 +125,20 @@ class DriftListItemRepository implements ListItemRepository {
   }
 
   @override
+  Future<void> clearCompleted(String listId) async {
+    final sections = await (_db.select(
+      _db.sections,
+    )..where((tbl) => tbl.listId.equals(listId))).get();
+    final sectionIds = sections.map((section) => section.id).toList();
+    if (sectionIds.isEmpty) return;
+
+    await (_db.delete(_db.listItems)..where(
+          (tbl) => tbl.completed.equals(true) & tbl.sectionId.isIn(sectionIds),
+        ))
+        .go();
+  }
+
+  @override
   Future<void> reorderItem({
     required String listId,
     required int oldIndex,
