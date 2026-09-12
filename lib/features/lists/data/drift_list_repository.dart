@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:promptlist/core/database/app_database.dart';
+import 'package:promptlist/features/ai_generation/domain/generated_list.dart';
 import 'package:promptlist/features/lists/domain/list_repository.dart';
 import 'package:promptlist/features/lists/domain/list_summary.dart';
 import 'package:promptlist/features/templates/domain/template_repository.dart';
@@ -179,6 +180,76 @@ class DriftListRepository implements ListRepository {
                   id: _generateId(),
                   sectionId: sectionId,
                   content: item.content,
+                  sortOrder: itemSortOrder,
+                  createdAt: now,
+                ),
+              );
+        }
+      }
+
+      return (await getList(listId))!;
+    });
+  }
+
+  @override
+  Future<ListRecord> createListFromGeneratedList(GeneratedList generated) {
+    return _db.transaction(() async {
+      final now = DateTime.now();
+      final listId = _generateId();
+
+      await _db
+          .into(_db.lists)
+          .insert(
+            ListsCompanion.insert(
+              id: listId,
+              title: generated.title,
+              description: Value(generated.description),
+              createdAt: now,
+              updatedAt: now,
+            ),
+          );
+
+      if (generated.sections.isEmpty) {
+        // Every list needs at least one section (see createList); the
+        // preview screen already drops empty sections and disables
+        // acceptance once every item is removed, but an empty generated
+        // list should still yield a normal, usable blank list.
+        await _db
+            .into(_db.sections)
+            .insert(
+              SectionsCompanion.insert(
+                id: _generateId(),
+                listId: listId,
+                sortOrder: _defaultSectionSortOrder,
+              ),
+            );
+      }
+
+      var sectionSortOrder = 0;
+      for (final section in generated.sections) {
+        sectionSortOrder += _defaultSectionSortOrder;
+        final sectionId = _generateId();
+        await _db
+            .into(_db.sections)
+            .insert(
+              SectionsCompanion.insert(
+                id: sectionId,
+                listId: listId,
+                title: Value(section.title),
+                sortOrder: sectionSortOrder,
+              ),
+            );
+
+        var itemSortOrder = 0;
+        for (final item in section.items) {
+          itemSortOrder += _defaultSectionSortOrder;
+          await _db
+              .into(_db.listItems)
+              .insert(
+                ListItemsCompanion.insert(
+                  id: _generateId(),
+                  sectionId: sectionId,
+                  content: item.text,
                   sortOrder: itemSortOrder,
                   createdAt: now,
                 ),

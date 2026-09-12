@@ -265,7 +265,7 @@ explicitly verify the no-persist-before-accept rule.
 
 **Dependencies:** TASK-041, TASK-042.
 
-### [ ] TASK-044 --- Accept AI list into local database
+### [x] TASK-044 --- Accept AI list into local database
 
 **Goal:** Convert approved preview into a normal checklist.
 

@@ -4,6 +4,63 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-044 complete
+
+**Done:** Added `ListRepository.createListFromGeneratedList(GeneratedList)`
+and its `DriftListRepository` implementation, mirroring the existing
+`createListFromTemplate` shape exactly: one `_db.transaction()` that
+inserts the list, then each section (falling back to a single default
+section if the generated list has none, matching `createList`'s
+"every list needs at least one section" invariant), then each
+section's items with fresh IDs and unchecked completion. No AI
+provenance/source metadata is stored anywhere in the schema --- the
+"AI source metadata, if stored, does not create separate behavior"
+criterion is satisfied vacuously, since there's nothing to create
+separate behavior from. A generated list is in every respect a normal
+list from the moment it's created.
+
+`AiCreateScreen._showPreview` now actually does something with an
+accepted preview instead of just acknowledging it: it calls the new
+repository method, clears the prompt, and pushes the normal
+`ListDetailScreen` for the newly created list --- so accepting an
+AI-generated list feels identical to opening a list created any other
+way, per the acceptance criteria. A `try`/`catch` around the create
+call surfaces a generic inline error message on failure rather than
+crashing (full retry/duplicate-submission UX polish is TASK-046's
+job); Drift's transaction guarantees failure never leaves a partial
+list regardless.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (172/172 passing, up from 169). New
+`createListFromGeneratedList` test group in
+`drift_list_repository_test.dart` covers: copies title/description/
+sections/items; items always start unchecked; a sectionless generated
+list still yields one usable default section; and an atomicity test
+using a poisoned `idGenerator` that returns the same id for every
+call, forcing a primary-key collision on the second section insert ---
+asserts `lists`/`sections`/`listItems` are all still empty afterward,
+proving the whole transaction rolled back rather than leaving the
+list and first section committed. Updated
+`ai_create_screen_test.dart`'s accept test to drive a real in-memory
+database end to end (was previously a bare `ProviderScope` with only
+the AI provider overridden) and assert a `ListDetailScreen` opens over
+exactly one persisted list with 3 items; `ai_create_no_persist_test.dart`
+now focuses solely on the cancel path, since accepting is supposed to
+persist as of this task. Also manually verified on the Android
+emulator: generated "Weekend hike", accepted it, landed on a fully
+normal editable `ListDetailScreen` (checkboxes, delete, drag handles),
+navigated back through AI Create to the Lists tab, and confirmed
+"Weekend hike" appears there with correct 0/3 progress alongside the
+other lists.
+
+**Next:** TASK-045 --- development AI provider adapter (connect a real
+model provider, e.g. OpenAI, behind `ListGenerationService` for local
+development, using the key already present in the untracked `.env`;
+automated tests continue to use `FakeListGenerationService`/mocks,
+never a live call).
+
+---
+
 ## 2026-09-12 --- TASK-043 complete
 
 **Done:** Added `GeneratedListPreviewScreen`

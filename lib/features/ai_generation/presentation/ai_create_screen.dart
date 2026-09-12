@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
+import 'package:promptlist/features/lists/presentation/list_providers.dart';
 
 import '../domain/ai_generation_result.dart';
 import '../domain/generated_list.dart';
@@ -11,8 +13,8 @@ import 'generated_list_preview_screen.dart';
 ///
 /// This screen only captures and submits the prompt. A successful
 /// generation is immediately handed to [GeneratedListPreviewScreen] for
-/// review; nothing here is persisted, and accepting the preview is only
-/// wired up to the database starting in TASK-044.
+/// review; nothing is persisted until the user explicitly accepts that
+/// preview, at which point it becomes a normal list and opens like one.
 class AiCreateScreen extends ConsumerStatefulWidget {
   const AiCreateScreen({super.key});
 
@@ -74,11 +76,22 @@ class _AiCreateScreenState extends ConsumerState<AiCreateScreen> {
 
     if (!mounted || accepted == null) return;
 
-    // TASK-044 will persist `accepted` into the database and open the
-    // new list; for now, acknowledge acceptance and reset the prompt.
-    ScaffoldMessenger.of(context)
-        .showSnackBar(const SnackBar(content: Text('List accepted.')));
-    setState(() => _controller.clear());
+    try {
+      final repository = ref.read(listRepositoryProvider);
+      final created = await repository.createListFromGeneratedList(accepted);
+
+      if (!mounted) return;
+      setState(() => _controller.clear());
+      await Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => ListDetailScreen(listId: created.id)),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(
+        () => _errorMessage =
+            'Could not save the generated list. Please try again.',
+      );
+    }
   }
 
   void _cancelGeneration() {

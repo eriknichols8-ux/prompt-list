@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' hide isNull, isNotNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:promptlist/core/database/app_database.dart';
+import 'package:promptlist/features/ai_generation/domain/generated_list.dart';
 import 'package:promptlist/features/lists/data/drift_list_repository.dart';
 import 'package:promptlist/features/lists/domain/list_repository.dart';
 import 'package:promptlist/features/templates/data/drift_template_repository.dart';
@@ -156,6 +157,90 @@ void main() {
       );
       expect(reloadedTemplate!.template.name, 'Packing');
       expect(reloadedTemplate.sections.single.items.single.content, 'Shirts');
+    });
+  });
+
+  group('createListFromGeneratedList', () {
+    const sample = GeneratedList(
+      title: 'Camping trip',
+      description: 'Pack for a weekend camping trip.',
+      sections: [
+        GeneratedSection(
+          title: 'Shelter',
+          items: [
+            GeneratedItem(text: 'Tent'),
+            GeneratedItem(text: 'Sleeping bag'),
+          ],
+        ),
+        GeneratedSection(title: null, items: [GeneratedItem(text: 'Lantern')]),
+      ],
+    );
+
+    test('copies title, description, sections, and items', () async {
+      final list = await repository.createListFromGeneratedList(sample);
+
+      expect(list.title, 'Camping trip');
+      expect(list.description, 'Pack for a weekend camping trip.');
+
+      final sections = await (database.select(
+        database.sections,
+      )..where((tbl) => tbl.listId.equals(list.id))).get();
+      expect(sections, hasLength(2));
+
+      final allItems = await database.select(database.listItems).get();
+      expect(allItems.map((i) => i.content).toSet(), {
+        'Tent',
+        'Sleeping bag',
+        'Lantern',
+      });
+    });
+
+    test('items always start unchecked', () async {
+      final list = await repository.createListFromGeneratedList(sample);
+
+      final items = await database.select(database.listItems).get();
+      expect(items, isNotEmpty);
+      expect(items.every((i) => !i.completed), isTrue);
+      expect(items.every((i) => i.completedAt == null), isTrue);
+      expect(list.id, isNotEmpty);
+    });
+
+    test(
+      'a generated list with no sections still yields a usable list',
+      () async {
+        const empty = GeneratedList(title: 'Empty', sections: []);
+
+        final list = await repository.createListFromGeneratedList(empty);
+
+        final sections = await (database.select(
+          database.sections,
+        )..where((tbl) => tbl.listId.equals(list.id))).get();
+        expect(sections, hasLength(1));
+      },
+    );
+
+    test('a mid-transaction failure leaves no partial list behind', () async {
+      // A generator that always returns the same id forces a primary
+      // key collision on the second section insert, so the whole
+      // transaction must roll back rather than leaving the list and
+      // first section committed.
+      final poisoned = DriftListRepository(database, idGenerator: () => 'x');
+      const twoSections = GeneratedList(
+        title: 'Doomed list',
+        sections: [
+          GeneratedSection(items: [GeneratedItem(text: 'A')]),
+          GeneratedSection(items: [GeneratedItem(text: 'B')]),
+        ],
+      );
+
+      await expectLater(
+        poisoned.createListFromGeneratedList(twoSections),
+        throwsA(anything),
+      );
+
+      expect(await database.select(database.lists).get(), isEmpty);
+      expect(await database.select(database.sections).get(), isEmpty);
+      expect(await database.select(database.listItems).get(), isEmpty);
     });
   });
 

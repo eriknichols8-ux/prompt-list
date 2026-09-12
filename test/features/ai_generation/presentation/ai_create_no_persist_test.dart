@@ -7,13 +7,16 @@ import 'package:promptlist/features/ai_generation/data/fake_list_generation_serv
 import 'package:promptlist/features/ai_generation/presentation/ai_create_screen.dart';
 import 'package:promptlist/features/ai_generation/presentation/ai_generation_providers.dart';
 import 'package:promptlist/features/ai_generation/presentation/generated_list_preview_screen.dart';
+import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
 
 import '../../../support/test_providers.dart';
 
-/// Verifies the no-persist-before-accept rule end to end through the
-/// real database: cancelling out of the preview, and even accepting it,
-/// must never create a list/section/item row, since turning an accepted
-/// preview into persisted rows isn't wired up until TASK-044.
+/// Verifies the no-persist-before-accept rule against the real database:
+/// cancelling out of the preview must never create a list/section/item
+/// row. (Accepting the preview *does* persist -- see
+/// `ai_create_screen_test.dart`'s "accepting the preview creates a real
+/// list" test -- which is exactly what makes this cancel-path guarantee
+/// worth pinning down on its own.)
 void main() {
   late AppDatabase database;
 
@@ -37,12 +40,9 @@ void main() {
   }
 
   Future<void> expectNoListsPersisted() async {
-    final lists = await database.select(database.lists).get();
-    final sections = await database.select(database.sections).get();
-    final items = await database.select(database.listItems).get();
-    expect(lists, isEmpty);
-    expect(sections, isEmpty);
-    expect(items, isEmpty);
+    expect(await database.select(database.lists).get(), isEmpty);
+    expect(await database.select(database.sections).get(), isEmpty);
+    expect(await database.select(database.listItems).get(), isEmpty);
   }
 
   testWidgets('cancelling the preview creates no database records', (
@@ -60,22 +60,7 @@ void main() {
     await tester.tap(find.byTooltip('Cancel'));
     await tester.pumpAndSettle();
 
-    await expectNoListsPersisted();
-  });
-
-  testWidgets('accepting the preview still creates no database records '
-      '(persistence is wired up in TASK-044)', (tester) async {
-    await pumpApp(tester);
-
-    await tester.enterText(find.byType(TextField), 'Camping trip');
-    await tester.pump();
-    await tester.tap(find.text('Make me a list'));
-    await tester.pumpAndSettle();
-    expect(find.byType(GeneratedListPreviewScreen), findsOneWidget);
-
-    await tester.tap(find.text('Add to my lists (3 items)'));
-    await tester.pumpAndSettle();
-
+    expect(find.byType(ListDetailScreen), findsNothing);
     await expectNoListsPersisted();
   });
 }

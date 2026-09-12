@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/features/ai_generation/data/fake_list_generation_service.dart';
 import 'package:promptlist/features/ai_generation/domain/ai_generation_failure.dart';
 import 'package:promptlist/features/ai_generation/domain/ai_generation_result.dart';
@@ -11,6 +13,9 @@ import 'package:promptlist/features/ai_generation/domain/list_generation_service
 import 'package:promptlist/features/ai_generation/presentation/ai_create_screen.dart';
 import 'package:promptlist/features/ai_generation/presentation/ai_generation_providers.dart';
 import 'package:promptlist/features/ai_generation/presentation/generated_list_preview_screen.dart';
+import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
+
+import '../../../support/test_providers.dart';
 
 /// A [ListGenerationService] whose response is controlled by an external
 /// [Completer], so tests can assert on the loading/cancel states before
@@ -170,10 +175,25 @@ void main() {
     expect(find.byType(GeneratedListPreviewScreen), findsNothing);
   });
 
-  testWidgets('accepting the preview returns to prompt entry and clears it', (
+  driftTestWidgets('accepting the preview creates a real list and opens it', (
     tester,
   ) async {
-    await pumpScreen(tester, FakeListGenerationService());
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      wrapWithProviders(
+        ProviderScope(
+          overrides: [
+            listGenerationServiceProvider.overrideWithValue(
+              FakeListGenerationService(),
+            ),
+          ],
+          child: const MaterialApp(home: Scaffold(body: AiCreateScreen())),
+        ),
+        database: database,
+      ),
+    );
 
     await tester.enterText(find.byType(TextField), 'Camping trip');
     await tester.pump();
@@ -184,9 +204,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(GeneratedListPreviewScreen), findsNothing);
-    expect(find.text('List accepted.'), findsOneWidget);
-    final textField = tester.widget<TextField>(find.byType(TextField));
-    expect(textField.controller!.text, isEmpty);
+    expect(find.byType(ListDetailScreen), findsOneWidget);
+
+    final lists = await database.select(database.lists).get();
+    expect(lists, hasLength(1));
+    expect(lists.single.title, 'Camping trip');
+    final items = await database.select(database.listItems).get();
+    expect(items, hasLength(3));
   });
 
   testWidgets(

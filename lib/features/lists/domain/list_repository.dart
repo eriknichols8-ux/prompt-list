@@ -1,4 +1,5 @@
 import 'package:promptlist/core/database/app_database.dart';
+import 'package:promptlist/features/ai_generation/domain/generated_list.dart';
 import 'package:promptlist/features/lists/domain/list_summary.dart';
 import 'package:promptlist/features/templates/domain/template_repository.dart';
 
@@ -44,6 +45,16 @@ abstract interface class ListRepository {
   /// template. If [template] has no sections, the new list still gets
   /// one default section, matching [createList].
   Future<ListRecord> createListFromTemplate(TemplateWithSections template);
+
+  /// Creates a new list from an accepted AI-generated preview: title,
+  /// sections, and items, all with fresh IDs and completion unchecked.
+  ///
+  /// This is the only place AI-generated content becomes persisted data
+  /// (see `AI_CONTRACT.md`) --- it runs atomically, so a failure partway
+  /// through never leaves a partial list behind, and once created the
+  /// list is a normal list like any other; nothing about its origin
+  /// changes how it behaves afterward.
+  Future<ListRecord> createListFromGeneratedList(GeneratedList generated);
 
   /// Renames the list identified by [id] to [title].
   ///
