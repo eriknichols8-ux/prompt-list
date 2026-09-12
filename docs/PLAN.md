@@ -141,7 +141,7 @@ Empty list state is useful. - Tests cover destructive actions.
 
 ## Milestone 2 --- Sections
 
-### [ ] TASK-020 --- Section domain/repository operations
+### [x] TASK-020 --- Section domain/repository operations
 
 **Goal:** Fully support sections already represented in schema.
 
@@ -151,7 +151,7 @@ is supported at the domain/repository layer. - Data integrity is tested.
 
 **Dependencies:** TASK-017.
 
-### [ ] TASK-021 --- Section UI
+### [x] TASK-021 --- Section UI
 
 **Goal:** Expose sections in the list editor.
 

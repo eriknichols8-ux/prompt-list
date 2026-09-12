@@ -32,21 +32,32 @@ class DriftListItemRepository implements ListItemRepository {
     );
   }
 
-  Future<List<ListItemRecord>> _fetchOrderedItems(String listId) async {
-    final query = _db.select(_db.listItems).join(_sectionJoin())
-      ..where(_db.sections.listId.equals(listId))
-      ..orderBy([
-        OrderingTerm.asc(_db.sections.sortOrder),
-        OrderingTerm.asc(_db.listItems.sortOrder),
-      ]);
-
-    final rows = await query.get();
-    return rows.map((row) => row.readTable(_db.listItems)).toList();
-  }
-
   @override
   Future<ListItemRecord> addItem({
     required String listId,
+    required String text,
+  }) async {
+    return _db.transaction(() async {
+      final firstSection =
+          await (_db.select(_db.sections)
+                ..where((tbl) => tbl.listId.equals(listId))
+                ..orderBy([(tbl) => OrderingTerm.asc(tbl.sortOrder)])
+                ..limit(1))
+              .getSingle();
+      return _insertItem(sectionId: firstSection.id, text: text);
+    });
+  }
+
+  @override
+  Future<ListItemRecord> addItemToSection({
+    required String sectionId,
+    required String text,
+  }) {
+    return _insertItem(sectionId: sectionId, text: text);
+  }
+
+  Future<ListItemRecord> _insertItem({
+    required String sectionId,
     required String text,
   }) async {
     final trimmedText = text.trim();
@@ -55,13 +66,9 @@ class DriftListItemRepository implements ListItemRepository {
     }
 
     return _db.transaction(() async {
-      final section = await (_db.select(
-        _db.sections,
-      )..where((tbl) => tbl.listId.equals(listId))).getSingle();
-
       final existingItems = await (_db.select(
         _db.listItems,
-      )..where((tbl) => tbl.sectionId.equals(section.id))).get();
+      )..where((tbl) => tbl.sectionId.equals(sectionId))).get();
       final nextSortOrder = existingItems.isEmpty
           ? _sortOrderStep
           : existingItems
@@ -75,7 +82,7 @@ class DriftListItemRepository implements ListItemRepository {
           .insert(
             ListItemsCompanion.insert(
               id: itemId,
-              sectionId: section.id,
+              sectionId: sectionId,
               content: trimmedText,
               sortOrder: nextSortOrder,
               createdAt: DateTime.now(),
@@ -85,6 +92,33 @@ class DriftListItemRepository implements ListItemRepository {
       return (_db.select(
         _db.listItems,
       )..where((tbl) => tbl.id.equals(itemId))).getSingle();
+    });
+  }
+
+  @override
+  Future<void> moveItemToSection({
+    required String itemId,
+    required String targetSectionId,
+  }) async {
+    await _db.transaction(() async {
+      final existingItems = await (_db.select(
+        _db.listItems,
+      )..where((tbl) => tbl.sectionId.equals(targetSectionId))).get();
+      final nextSortOrder = existingItems.isEmpty
+          ? _sortOrderStep
+          : existingItems
+                    .map((item) => item.sortOrder)
+                    .reduce((a, b) => a > b ? a : b) +
+                _sortOrderStep;
+
+      await (_db.update(
+        _db.listItems,
+      )..where((tbl) => tbl.id.equals(itemId))).write(
+        ListItemsCompanion(
+          sectionId: Value(targetSectionId),
+          sortOrder: Value(nextSortOrder),
+        ),
+      );
     });
   }
 
@@ -140,12 +174,16 @@ class DriftListItemRepository implements ListItemRepository {
 
   @override
   Future<void> reorderItem({
-    required String listId,
+    required String sectionId,
     required int oldIndex,
     required int newIndex,
   }) async {
     await _db.transaction(() async {
-      final items = await _fetchOrderedItems(listId);
+      final items =
+          await (_db.select(_db.listItems)
+                ..where((tbl) => tbl.sectionId.equals(sectionId))
+                ..orderBy([(tbl) => OrderingTerm.asc(tbl.sortOrder)]))
+              .get();
       final moved = items.removeAt(oldIndex);
       items.insert(newIndex, moved);
 

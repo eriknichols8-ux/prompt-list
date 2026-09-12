@@ -4,6 +4,97 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-020 and TASK-021 complete (Milestone 2 finished)
+
+**Implemented together, in one commit:** TASK-021 (section UI) depends
+on TASK-020 (section domain/repository), and one specific piece of
+TASK-020 --- scoping item reordering to a single section instead of a
+whole list --- required changing `ListItemRepository.reorderItem`'s
+signature, which the existing (single-section) `ListDetailScreen`
+already called. There was no way to land TASK-020 as a commit that
+both builds and leaves the UI behaving correctly without first doing
+at least the minimal section-aware UI work, so the two were done as
+one integrated change rather than forcing an artificial, temporarily-
+broken split.
+
+**Domain/repository (TASK-020):** Added `SectionRepository`/
+`DriftSectionRepository` (`lib/features/lists/domain/
+section_repository.dart`, `lib/features/lists/data/
+drift_section_repository.dart`): `watchSections`, `createSection`
+(title optional, trimmed, blank → null), `renameSection` (same
+normalization; unlike list/item text a section title is allowed to be
+blank), `deleteSection` (cascades its items via the existing FK, but
+throws `SectionValidationException` if it's the list's *only*
+remaining section --- every list must always have at least one, per
+`ARCHITECTURE.md`'s "Default Section Strategy"), and `reorderSection`
+(same renormalize-everything-every-move strategy as
+`ListItemRepository.reorderItem`).
+
+Extended `ListItemRepository`: `addItemToSection` (explicit section
+target) alongside the existing `addItem(listId)` (now resolves the
+list's *first* section by sort order --- still meaningful with several
+sections, and unchanged behavior for the common single-section list);
+`moveItemToSection` (relocates an item, appending it after the target
+section's existing items); `reorderItem` now takes `sectionId` instead
+of `listId` and only reorders within that one section --- it no longer
+touches other sections' items at all.
+
+**UI (TASK-021):** `ListDetailScreen` now renders one of two views,
+computed from a new `sectionsWithItemsProvider` (combines
+`sectionsProvider` + `itemsProvider`, both already reactive):
+
+- **1 section (the common case):** identical to before --- flat
+  checklist, no section chrome, global bottom add-item field. This is
+  the literal mechanism behind PRODUCT_SPEC.md section 8: "A basic
+  list should not require the user to understand sections."
+- **2+ sections:** each section renders as its own block --- a header
+  (tap the title to rename; up/down/delete controls) followed by its
+  own drag-reorderable item list and its own inline add-item field.
+  Each item also gets a "move to section" action (a picker over the
+  *other* sections) when more than one section exists.
+
+Section reordering uses up/down icon buttons rather than drag-and-drop
+--- nesting two independently-draggable `ReorderableListView`s (one for
+sections, one per section for its items) is a known-fragile Flutter
+pattern, and drag-and-drop was only an explicit requirement for items
+(TASK-016), not sections. Item drag-and-drop within a section is
+unchanged from TASK-016, just correctly scoped per section now.
+"Add section" lives in the existing list-level menu
+(`lib/features/lists/presentation/section_dialog.dart` for the
+create/rename dialog, which --- unlike `RenameListDialog`/
+`EditItemDialog` --- always allows saving blank, since an untitled
+section is valid;
+`lib/features/lists/presentation/move_to_section_dialog.dart` for the
+move picker).
+
+A UI consequence worth noting: once a list is back down to one
+section, there is no section-delete control at all (simple mode has no
+section chrome), so `deleteSection`'s "can't delete the only section"
+guard is unreachable through this screen by construction --- it only
+matters for direct repository callers, which is exactly what
+`drift_section_repository_test.dart` exercises.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test` (84/84 passing, up from 62). New
+`drift_section_repository_test.dart` covers create/rename (including
+blank → null)/delete (cascade, and refusing the last section)/reorder
+(the same first→last/last→first/repeated/persistence battery as
+TASK-016's item tests). Extended
+`drift_list_item_repository_test.dart` with `addItemToSection`,
+`moveItemToSection` (moved item appended after the target section's
+existing items), and confirmation that `reorderItem` no longer
+disturbs a different section's order. New
+`list_detail_screen_sections_test.dart` covers adding a section
+(header appears), renaming, deleting (and the simple-mode fallback
+above), section reordering, and moving an item between sections.
+
+**Milestone 2 --- Sections is now complete.**
+
+**Next:** Milestone 3 --- Templates, starting with TASK-030 (template
+schema and repository).
+
+---
+
 ## 2026-09-12 --- TASK-017 complete (Milestone 1 finished)
 
 **Done:** `ListDetailScreen` now has a `PopupMenuButton` (explicit

@@ -7,11 +7,13 @@ import 'package:promptlist/features/lists/domain/list_item_repository.dart';
 void main() {
   late AppDatabase database;
   late String listId;
+  late String sectionId;
   late DriftListItemRepository repository;
 
   setUp(() async {
     database = AppDatabase(NativeDatabase.memory());
     listId = 'list-1';
+    sectionId = 'section-1';
     final now = DateTime.now();
     await database
         .into(database.lists)
@@ -27,7 +29,7 @@ void main() {
         .into(database.sections)
         .insert(
           SectionsCompanion.insert(
-            id: 'section-1',
+            id: sectionId,
             listId: listId,
             sortOrder: 1000,
           ),
@@ -66,6 +68,87 @@ void main() {
 
       expect(await database.select(database.listItems).get(), isEmpty);
     });
+
+    test(
+      'adds to the first section by sort order when several exist',
+      () async {
+        await database
+            .into(database.sections)
+            .insert(
+              SectionsCompanion.insert(
+                id: 'section-0',
+                listId: listId,
+                sortOrder: 500,
+              ),
+            );
+
+        final item = await repository.addItem(listId: listId, text: 'Milk');
+
+        expect(item.sectionId, 'section-0');
+      },
+    );
+  });
+
+  group('addItemToSection', () {
+    test('adds a trimmed item to the given section', () async {
+      final item = await repository.addItemToSection(
+        sectionId: sectionId,
+        text: '  Milk  ',
+      );
+
+      expect(item.sectionId, sectionId);
+      expect(item.content, 'Milk');
+    });
+
+    test('rejects blank text and persists nothing', () async {
+      await expectLater(
+        repository.addItemToSection(sectionId: sectionId, text: '  '),
+        throwsA(isA<ListItemValidationException>()),
+      );
+
+      expect(await database.select(database.listItems).get(), isEmpty);
+    });
+  });
+
+  group('moveItemToSection', () {
+    test(
+      'moves an item and appends it after the target section\'s items',
+      () async {
+        final otherSectionId = 'section-2';
+        await database
+            .into(database.sections)
+            .insert(
+              SectionsCompanion.insert(
+                id: otherSectionId,
+                listId: listId,
+                sortOrder: 2000,
+              ),
+            );
+        await repository.addItemToSection(
+          sectionId: otherSectionId,
+          text: 'Existing',
+        );
+        final item = await repository.addItem(listId: listId, text: 'Milk');
+
+        await repository.moveItemToSection(
+          itemId: item.id,
+          targetSectionId: otherSectionId,
+        );
+
+        final sourceItems = await repository.watchItems(listId).first;
+        final moved = sourceItems.singleWhere((i) => i.id == item.id);
+        expect(moved.sectionId, otherSectionId);
+
+        final targetItems = await (database.select(
+          database.listItems,
+        )..where((tbl) => tbl.sectionId.equals(otherSectionId))).get();
+        targetItems.sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+        expect(targetItems.map((i) => i.content).toList(), [
+          'Existing',
+          'Milk',
+        ]);
+      },
+    );
   });
 
   group('editItemText', () {
@@ -166,7 +249,11 @@ void main() {
       await repository.addItem(listId: listId, text: 'B');
       await repository.addItem(listId: listId, text: 'C');
 
-      await repository.reorderItem(listId: listId, oldIndex: 0, newIndex: 2);
+      await repository.reorderItem(
+        sectionId: sectionId,
+        oldIndex: 0,
+        newIndex: 2,
+      );
 
       expect(await orderedContents(), ['B', 'C', 'A']);
     });
@@ -176,7 +263,11 @@ void main() {
       await repository.addItem(listId: listId, text: 'B');
       await repository.addItem(listId: listId, text: 'C');
 
-      await repository.reorderItem(listId: listId, oldIndex: 2, newIndex: 0);
+      await repository.reorderItem(
+        sectionId: sectionId,
+        oldIndex: 2,
+        newIndex: 0,
+      );
 
       expect(await orderedContents(), ['C', 'A', 'B']);
     });
@@ -187,7 +278,11 @@ void main() {
       await repository.addItem(listId: listId, text: 'C');
       await repository.addItem(listId: listId, text: 'D');
 
-      await repository.reorderItem(listId: listId, oldIndex: 1, newIndex: 2);
+      await repository.reorderItem(
+        sectionId: sectionId,
+        oldIndex: 1,
+        newIndex: 2,
+      );
 
       expect(await orderedContents(), ['A', 'C', 'B', 'D']);
     });
@@ -198,11 +293,23 @@ void main() {
       await repository.addItem(listId: listId, text: 'C');
 
       // [A,B,C] -> move A to the end -> [B,C,A]
-      await repository.reorderItem(listId: listId, oldIndex: 0, newIndex: 2);
+      await repository.reorderItem(
+        sectionId: sectionId,
+        oldIndex: 0,
+        newIndex: 2,
+      );
       // [B,C,A] -> move A (index 2) to the front -> [A,B,C]
-      await repository.reorderItem(listId: listId, oldIndex: 2, newIndex: 0);
+      await repository.reorderItem(
+        sectionId: sectionId,
+        oldIndex: 2,
+        newIndex: 0,
+      );
       // [A,B,C] -> move B (index 1) to the front -> [B,A,C]
-      await repository.reorderItem(listId: listId, oldIndex: 1, newIndex: 0);
+      await repository.reorderItem(
+        sectionId: sectionId,
+        oldIndex: 1,
+        newIndex: 0,
+      );
 
       expect(await orderedContents(), ['B', 'A', 'C']);
 
@@ -230,7 +337,11 @@ void main() {
         await repository.addItem(listId: listId, text: 'C');
         await repository.deleteItem(a.id);
 
-        await repository.reorderItem(listId: listId, oldIndex: 1, newIndex: 0);
+        await repository.reorderItem(
+          sectionId: sectionId,
+          oldIndex: 1,
+          newIndex: 0,
+        );
 
         expect(await orderedContents(), ['C', 'B']);
       },
@@ -239,7 +350,11 @@ void main() {
     test('reordering a single-item list is a no-op', () async {
       await repository.addItem(listId: listId, text: 'A');
 
-      await repository.reorderItem(listId: listId, oldIndex: 0, newIndex: 0);
+      await repository.reorderItem(
+        sectionId: sectionId,
+        oldIndex: 0,
+        newIndex: 0,
+      );
 
       expect(await orderedContents(), ['A']);
     });
@@ -247,13 +362,42 @@ void main() {
     test('new order persists across a fresh query', () async {
       await repository.addItem(listId: listId, text: 'A');
       await repository.addItem(listId: listId, text: 'B');
-      await repository.reorderItem(listId: listId, oldIndex: 0, newIndex: 1);
+      await repository.reorderItem(
+        sectionId: sectionId,
+        oldIndex: 0,
+        newIndex: 1,
+      );
 
       final reloaded = await DriftListItemRepository(database)
           .watchItems(listId)
           .first;
 
       expect(reloaded.map((item) => item.content).toList(), ['B', 'A']);
+    });
+
+    test('only reorders items within the given section', () async {
+      final otherSectionId = 'section-2';
+      await database
+          .into(database.sections)
+          .insert(
+            SectionsCompanion.insert(
+              id: otherSectionId,
+              listId: listId,
+              sortOrder: 2000,
+            ),
+          );
+      await repository.addItem(listId: listId, text: 'A');
+      await repository.addItem(listId: listId, text: 'B');
+      await repository.addItemToSection(sectionId: otherSectionId, text: 'X');
+      await repository.addItemToSection(sectionId: otherSectionId, text: 'Y');
+
+      await repository.reorderItem(
+        sectionId: otherSectionId,
+        oldIndex: 0,
+        newIndex: 1,
+      );
+
+      expect(await orderedContents(), ['A', 'B', 'Y', 'X']);
     });
   });
 
