@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:promptlist/core/ui/section_heading.dart';
 
 import '../domain/generated_list.dart';
 
@@ -119,10 +120,7 @@ class _GeneratedListPreviewScreenState
             if (_sections[s].title != null)
               Padding(
                 padding: const EdgeInsets.only(top: 8, bottom: 4),
-                child: Text(
-                  _sections[s].title!,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                child: SectionHeading(_sections[s].title!),
               ),
             for (var i = 0; i < _sections[s].items.length; i++)
               ListTile(

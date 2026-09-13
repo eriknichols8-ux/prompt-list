@@ -4,6 +4,82 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-010: final design QA pass (run summary)
+
+**Why this:** The final iteration of this Design Evolution run, per
+`DESIGN_RALPH.md`'s explicit guidance that "the final iteration should
+act as a design QA pass" rather than another single-theme change.
+Walked screens/flows this run's iteration-by-iteration approach hadn't
+specifically re-checked as a whole: the Templates detail screen (both
+themes), the full "Ask AI to change this list" flow end to end
+(instruction dialog -> loading -> Review AI changes -> apply), and a
+cross-check of every remaining dialog against the design system.
+
+**Found and fixed one real inconsistency:**
+`GeneratedListPreviewScreen` --- the review screen used both by fresh AI
+generation and by "Ask AI to change this list" --- rendered its section
+titles as plain `Text(style: titleMedium)`, the exact styling
+`SectionHeading` (DESIGN-004) replaced everywhere else a section title
+appears (`list_detail_screen.dart`, `template_detail_screen.dart`).
+This is precisely the kind of gap a per-screen iteration approach can
+miss: DESIGN-004 touched the two screens that already existed at the
+time, but `GeneratedListPreviewScreen`'s section titles are rendered
+inline in a `ListView`, not through the same code path, so the sweep
+never reached it. Replaced it with `SectionHeading`, confirmed via
+`dart format`, `flutter analyze`, `flutter test` (232/232, unchanged ---
+no test inspects that `Text`'s style), and visually on the Android
+emulator (release build) through the real "add tortillas" -> Review AI
+changes flow.
+
+**Everything else checked out with no changes needed:**
+
+-   Templates detail screen (`Grocery Run`, a real built-in template
+    with 4 sections/20 items) renders correctly in both light and dark
+    mode, with `SectionHeading` already applying correctly there.
+-   `MoveToSectionDialog`'s `SimpleDialog` shares the same rounded
+    shape/title theming as every `AlertDialog` in the app despite being
+    a different widget type --- confirmed directly, not assumed.
+-   The "Ask AI to change this list" instruction dialog, its loading
+    dialog, and the resulting Review-AI-changes screen all render
+    correctly with no exceptions (`adb logcat` clean of app-specific
+    errors throughout this session's QA, consistent with every prior
+    iteration's checks).
+
+**This run's arc (DESIGN-001 through DESIGN-010):** established a full
+design system from a default-Material baseline (shape language,
+typography, a circular completion checkbox, consistent filled inputs,
+flat branded chrome); gave the AI-create surface real identity with a
+non-cliche icon motif reused consistently everywhere AI-create appears;
+added purposeful, reduced-motion-aware animation to item completion and
+list progress; brought section headers, empty states, and the Settings
+placeholder in line with the same visual language; gave destructive
+confirmations a distinct warning treatment; ran two dedicated
+verification passes (an accessibility/contrast audit and this final QA
+pass) rather than only ever adding new surface area. Every iteration
+shipped with passing tests, a from-scratch `flutter analyze`, and
+manual verification on the Android emulator in both light and dark
+mode, and left the working tree clean, committed, and pushed before
+moving on --- consistent with `CLAUDE.md`'s Git Is Part of Done and
+Testing Is Mandatory sections holding throughout the run, not just at
+its end.
+
+**What remains weak (starting hypothesis for whenever this loop
+resumes, not a commitment):** item add/remove and list creation still
+have no motion beyond Material's defaults; the Lists/Templates/AI
+Create/Settings tab bar icons are otherwise untouched Material icons
+except AI Create's; a real AI-generated illustration set (per
+`CLAUDE.md`'s "AI-Generated Visual Assets" section) remains a documented
+future direction rather than implemented, since image-generation
+tooling wasn't available in this environment --- `StackedCardsIllustration`
+is the tasteful vector fallback in the meantime, not a permanent
+substitute if that tooling becomes available later.
+
+**Next:** Per `DESIGN_RALPH.md`'s Iteration Independence rule, whatever
+iteration picks this back up should inspect the app fresh rather than
+simply working through the list above.
+
+---
+
 ## 2026-09-12 --- DESIGN-009: distinct treatment for destructive confirmations
 
 **Why this:** With two iterations left in this run's budget, this was
