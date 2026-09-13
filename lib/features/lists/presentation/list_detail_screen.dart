@@ -3,6 +3,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/core/ui/confirm_dialog.dart';
+import 'package:promptlist/core/ui/section_heading.dart';
 import 'package:promptlist/features/ai_generation/domain/ai_generation_result.dart';
 import 'package:promptlist/features/ai_generation/domain/generated_list.dart';
 import 'package:promptlist/features/ai_generation/presentation/ai_generation_providers.dart';
@@ -594,8 +595,6 @@ class _SectionBlockState extends ConsumerState<_SectionBlock> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Column(
@@ -611,9 +610,8 @@ class _SectionBlockState extends ConsumerState<_SectionBlock> {
                     hint: 'Rename section',
                     child: InkWell(
                       onTap: _rename,
-                      child: Text(
+                      child: SectionHeading(
                         _section.title ?? 'Untitled section',
-                        style: theme.textTheme.titleSmall,
                       ),
                     ),
                   ),

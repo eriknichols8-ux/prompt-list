@@ -4,6 +4,76 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-004: give section headers real structure
+
+**Why this:** DESIGN-002 and DESIGN-003 both carried forward the same
+note: section headers inside a multi-section list, and inside a
+template's preview, still rendered as plain `titleSmall` text with no
+visual distinction from ordinary body text beyond weight --- the one
+piece of app structure that hadn't picked up any of the "quiet,
+colored, deliberate label" language established elsewhere (Templates'
+group headings, AI Create's "Your request"). Re-inspecting concretely
+this iteration rather than reflexively reaching for the same
+`AppEyebrowText` widget used in those other two places: section titles
+are **user-authored** free text ("Produce," "Weekend Chores"), not
+short app-authored chrome strings. Forcing a user's own casual section
+name into `AppEyebrowText`'s all-caps, letter-spaced treatment would
+read as shouting over their own content rather than quiet structure ---
+so this iteration deliberately did **not** reuse that widget, and
+instead designed a distinct treatment suited to user content.
+
+**Done:** Added `SectionHeading` (`lib/core/ui/section_heading.dart`):
+a small rounded terracotta bar beside the section title, with the
+title itself colored `colorScheme.primary` and bolded via the existing
+`titleSmall` style --- structural and on-brand without changing case or
+competing with the eyebrow label's specific meaning ("this is
+app-level navigation chrome"). Replaced the plain `Text(..., style:
+theme.textTheme.titleSmall)` calls in both
+`list_detail_screen.dart`'s editable section header (tap-to-rename,
+inside a multi-section list) and `template_detail_screen.dart`'s
+read-only section preview with it --- the same two places that
+previously used identical plain styling, now sharing one real
+component instead of two independent inline styles.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (232/232 passing, unchanged count --- no
+behavior changed, `SectionHeading` still renders the exact title text
+any existing `find.text(...)` assertion looked for, so no test needed
+updating). Manually verified on the Android emulator (release build):
+added a second section ("Produce") to a test list and confirmed both
+section headers render with the colored marker and bold accent color
+in light and dark mode, remain legible, and the tap-to-rename
+interaction and up/down/delete section controls all still work
+unaffected.
+
+**What remains visually weak (starting hypothesis, not a commitment):**
+
+-   Empty states (Lists, Templates) are still icon + two lines of
+    centered text --- functional but generic; still the lowest-risk
+    place for the AI-generated illustration direction `CLAUDE.md`
+    encourages, or a bespoke `CustomPainter` illustration in the same
+    spirit as `PromptToListIcon` if AI image generation isn't
+    exercised this run.
+-   Beyond item-completion (DESIGN-003), no other motion exists yet:
+    item add/remove, list creation, and the AI generate/preview/accept
+    flow are all still instant beyond Material's own default
+    transitions.
+-   The Lists screen's per-card `LinearProgressIndicator` still jumps
+    to its new value instantly rather than animating --- a small,
+    low-risk companion to DESIGN-003's completion work, not yet done.
+-   Four iterations in, the app's visual identity is now fairly
+    coherent across Lists/Templates/AI Create/list-detail; Settings is
+    still a bare, un-styled placeholder screen (`Center(child:
+    Text('Settings'))`) with no actual settings in it per
+    `PRODUCT_SPEC.md`. Out of scope for a pure design pass (it's a
+    product-completeness gap, not a styling one), but worth flagging
+    since it's the one screen that would immediately look unfinished
+    if a user tapped into it.
+
+**Next:** Any of the above, per the next iteration's own inspection.
+
+---
+
 ## 2026-09-12 --- DESIGN-003: animate item completion
 
 **Why this:** Re-inspecting the app after DESIGN-002, `DESIGN_RALPH.md`'s

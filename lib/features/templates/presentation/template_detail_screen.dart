@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/core/ui/confirm_dialog.dart';
+import 'package:promptlist/core/ui/section_heading.dart';
 import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
 import 'package:promptlist/features/lists/presentation/list_providers.dart';
 import 'package:promptlist/features/templates/domain/template_repository.dart';
@@ -153,10 +154,7 @@ class _TemplatePreview extends StatelessWidget {
         ],
         for (final sectionWithItems in sections) ...[
           if (sectionWithItems.section.title != null) ...[
-            Text(
-              sectionWithItems.section.title!,
-              style: theme.textTheme.titleSmall,
-            ),
+            SectionHeading(sectionWithItems.section.title!),
             const SizedBox(height: 4),
           ],
           for (final item in sectionWithItems.items)
