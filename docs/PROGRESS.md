@@ -4,6 +4,87 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-007: accessibility/consistency audit (no code changes needed)
+
+**Why this:** Six iterations added a real design system, several new
+custom widgets (`AppCard`, `SectionHeading`, `AppEyebrowText`,
+`PromptToListIcon`, `StackedCardsIllustration`), and multiple new
+animations, none of which had been specifically re-checked against
+accessibility since TASK-062 (before this run started). Per
+`DESIGN_RALPH.md`'s guidance that iterations should progressively shift
+toward "consistency, accessibility, tiny polish" rather than
+continuing to add new surface area indefinitely, and per its explicit
+Accessibility section (sufficient contrast, readable text, text
+scaling support, non-color state indicators), this iteration was a
+deliberate audit pass rather than a new feature/surface.
+
+**Done (verification, not code changes):**
+
+-   **Text scaling:** tested the Lists screen, AI Create's compose
+    card + suggestion chips, and a multi-section list detail screen
+    (including a deliberately very long section title) on the Android
+    emulator at `font_scale` 1.3 and 2.0 via `adb shell settings put
+    system font_scale`. Everything reflows cleanly: the `Wrap`-based
+    suggestion chips (DESIGN-002) stack to one column, the compose
+    card and progress bars grow without clipping, and critically ---
+    `SectionHeading`'s (DESIGN-004) `Flexible` + `TextOverflow.ellipsis`
+    correctly truncates an oversized section title instead of letting
+    it collide with the row's three trailing icon buttons (move
+    up/down/delete), confirmed directly at 2.0x scale with a
+    30-character section name. No clipping, overlap, or broken layout
+    found anywhere.
+-   **Color contrast:** computed exact WCAG relative-luminance contrast
+    ratios (via a throwaway test using the real `ColorScheme.fromSeed`
+    output, not eyeballing) for the new colored-text-on-container
+    pattern shared by `SectionHeading` and `AppEyebrowText`
+    (`colorScheme.primary` text on `colorScheme.surfaceContainerHigh`/
+    `surface`): **5.26:1** (light, on surfaceContainerHigh), **6.15:1**
+    (light, on surface), **8.42:1** (dark, on surfaceContainerHigh),
+    **10.92:1** (dark, on surface). All four comfortably clear WCAG
+    AA's 4.5:1 threshold for normal text; both dark-mode pairings clear
+    AAA's 7:1 threshold outright.
+-   **Semantics:** confirmed the new purely-decorative `CustomPainter`
+    widgets (`PromptToListIcon`, `StackedCardsIllustration`) carry no
+    `Semantics`/gesture wrapping of their own, so they correctly stay
+    silent to screen readers instead of announcing meaningless content
+    --- `PromptToListIcon` relies on its existing sibling label ("AI
+    Create" on the nav destination, "Make me a list" on the button) for
+    the actual accessible name, exactly as a decorative icon should.
+-   **Runtime stability:** re-checked `adb logcat` for exceptions while
+    exercising checkbox completion, section renaming, and search across
+    every scale-testing pass in this iteration --- only unrelated
+    OS-level/emulator noise (Bluetooth, `SatelliteAppTracker`,
+    `InputDispatcher` channel disposal from repeated app restarts,
+    Play Store `Finsky` RPC noise), nothing from the app's own package.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (232/232 passing --- this iteration made no
+production or test code changes, so the count and every result are
+identical to DESIGN-006). No commit-worthy code change resulted from
+this audit because none was needed; per `CLAUDE.md`'s Testing/Git
+rules this is still recorded as its own dated entry (not silently
+skipped) since running --- and documenting --- the audit itself is the
+iteration's actual output, and the next iteration/human reviewer
+benefits from knowing this ground was already covered rather than
+re-treading it or assuming it was never checked.
+
+**What remains weak (starting hypothesis, not a commitment):**
+
+-   `Settings` is still the one screen with zero design investment.
+-   Item add/remove and list creation still have no motion beyond
+    Material's defaults (see DESIGN-006's notes --- still true).
+-   This audit covered the screens/components touched by DESIGN-001
+    through DESIGN-006 specifically, not a from-scratch sweep of the
+    entire app (e.g. dialogs, the Templates detail screen, Settings).
+    A broader pass could still be worthwhile in the run's final
+    iterations, per `DESIGN_RALPH.md`'s "Final Iterations" guidance
+    calling for exactly that kind of QA sweep near the end of the
+    budget.
+
+**Next:** Any of the above, per the next iteration's own inspection.
+
+---
+
 ## 2026-09-12 --- DESIGN-006: animate progress, finish empty-state consistency
 
 **Why this:** Five iterations in, this is the natural point to shift
