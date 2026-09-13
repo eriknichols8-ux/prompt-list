@@ -4,6 +4,61 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-008: give the Settings placeholder a real design
+
+**Why this:** Flagged in DESIGN-004, DESIGN-005, and DESIGN-006's
+"what remains weak" notes without being picked up: `SettingsScreen` was
+still `Center(child: Text('Settings'))` --- a screen with an unstyled
+label matching its own app-bar title, which reads as broken or
+unfinished rather than intentionally minimal, especially by contrast
+with seven iterations of polish everywhere else. `docs/PRODUCT_SPEC.md`
+section 4 is explicit that Settings is "currently a lightweight
+placeholder screen" with AI-provider-status as "a natural follow-up,
+not yet implemented" --- so this is a pure design task, not a feature
+request: give the existing placeholder state an honest, designed
+presentation without inventing settings that don't exist.
+
+**Done:** Restyled `SettingsScreen`'s body to match the empty-state
+pattern used everywhere else in the app (`Icons.tune_outlined` in
+`colorScheme.primary`, a title, and a supporting line), with copy that
+mirrors `PRODUCT_SPEC.md`'s own honest framing --- "Nothing to configure
+yet" / "PromptList works fully offline with no setup required.
+Preferences, like AI provider status, will appear here as they are
+added." Deliberately did not reach for a `StackedCardsIllustration`
+variant here: that motif is specifically about "your input becomes a
+list," which has no connection to a settings/preferences screen, and
+forcing it in would dilute what the illustration means everywhere else
+it appears. A plain, well-chosen icon in the established primary color
+is the right amount of consistency without false thematic connection.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (232/232 passing, unchanged --- the only existing
+test touching this screen, `root_shell_test.dart`, checks
+`find.byType(SettingsScreen)`, not any specific body text, so no test
+needed updating). Manually verified on the Android emulator (release
+build) in light and dark mode: the new empty state renders legibly in
+both, matches the visual weight of every other empty state in the app,
+and the screen no longer reads as an accidentally-unfinished stub.
+
+**What remains weak (starting hypothesis, not a commitment):**
+
+-   Item add/remove and list creation still have no motion beyond
+    Material's defaults (carried forward from DESIGN-006/007 --- still
+    true, still a reasonable candidate if a future iteration wants a
+    contained motion-focused theme).
+-   Per DESIGN-007's note, the accessibility audit covered
+    DESIGN-001-006's surfaces specifically, not dialogs
+    (`CreateListDialog`, `RenameListDialog`, `EditItemDialog`,
+    `SectionDialog`, `AiModifyListDialog`, etc.) or the Templates
+    detail screen. With two iterations left in this run's budget, a
+    full final QA sweep across everything --- not just the screens this
+    run happened to touch --- fits `DESIGN_RALPH.md`'s guidance that the
+    *last* iteration should act as a dedicated design QA pass.
+
+**Next:** Any of the above, per the next iteration's own inspection.
+
+---
+
 ## 2026-09-12 --- DESIGN-007: accessibility/consistency audit (no code changes needed)
 
 **Why this:** Six iterations added a real design system, several new
