@@ -4,6 +4,76 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-006: animate progress, finish empty-state consistency
+
+**Why this:** Five iterations in, this is the natural point to shift
+from foundational/systemic changes toward the smaller consistency and
+polish items per `DESIGN_RALPH.md`'s escalation guidance ("as the run
+progresses, changes should generally become more refined"). Two small,
+related gaps were carried over across multiple prior entries' "what
+remains weak" notes: the Lists screen's per-card progress bar still
+jumped to its value instantly (a natural companion to DESIGN-003's
+completion motion, never done), and the search "no results" state was
+the one empty state left still using a plain Material icon after
+DESIGN-005 illustrated the other two.
+
+**Done:**
+
+-   `_ListCard`'s `LinearProgressIndicator` (`lists_screen.dart`) is
+    now wrapped in a `TweenAnimationBuilder<double>` (~400ms,
+    `Curves.easeOutCubic`) so its fill animates smoothly on first
+    appearance and whenever completion changes elsewhere and the user
+    returns to Lists, instead of snapping to the new value. Respects
+    reduced motion via `Duration.zero` when
+    `MediaQuery.of(context).disableAnimations` is true, consistent with
+    every other animation added this run.
+-   `_NoSearchResultsState` now uses the same
+    `StackedCardsIllustration` (checklist variant) introduced in
+    DESIGN-005, at a smaller 72px size to read as a secondary/transient
+    state rather than competing with the primary empty state's 96px
+    illustration --- closing the one empty state DESIGN-005 had
+    explicitly deferred.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (232/232 passing, unchanged --- `lists_screen_test.dart`'s
+progress assertions only ever checked the rendered "N/M completed"
+text, never `LinearProgressIndicator.value` directly, so the animation
+needed no test changes; `pumpAndSettle()` correctly waits out the
+bounded, non-repeating animation before assertions run).
+
+Manually verified on the Android emulator (release build): created a
+list with items, completed one, and confirmed the progress bar and
+"1/1 completed" label both update correctly with no rendering glitches
+or crashes (checked `adb logcat` for exceptions --- only unrelated
+OS-level noise, same as prior iterations' checks); searched for a
+nonsense term and confirmed the smaller illustration renders correctly
+in the no-results state.
+
+**What remains visually weak (starting hypothesis, not a commitment):**
+
+-   Item add/remove and list creation still have no motion beyond
+    Material's defaults --- the one motion gap from DESIGN-003's notes
+    still open, deliberately: animating list-item insertion cleanly
+    requires distinguishing "just added" from "already existed" per
+    row inside a `ReorderableListView`, which is real state-tracking
+    complexity for a lower-value target than completion or progress
+    were.
+-   `Settings` remains the one screen with zero design investment ---
+    a product-completeness gap, not a styling one, so still out of
+    scope for a pure design pass, but six iterations in it's
+    increasingly the obvious next thing a human reviewing the app
+    would notice.
+-   The app has now had six consecutive iterations without a dedicated
+    accessibility/consistency QA pass across the whole app (text
+    scaling, contrast, semantics) since TASK-062 --- worth a full pass
+    later in this run per `DESIGN_RALPH.md`'s "Final Iterations"
+    guidance, rather than continuing to add new surface area
+    indefinitely.
+
+**Next:** Any of the above, per the next iteration's own inspection.
+
+---
+
 ## 2026-09-12 --- DESIGN-005: illustrated empty states
 
 **Why this:** Both Lists' and Templates' empty states were still a

@@ -110,10 +110,9 @@ class _NoSearchResultsState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 56,
-              color: Theme.of(context).colorScheme.primary,
+            const StackedCardsIllustration(
+              variant: StackedCardsVariant.checklist,
+              size: 72,
             ),
             const SizedBox(height: 16),
             Text(
@@ -208,10 +207,17 @@ class _ListCard extends StatelessWidget {
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: progress,
-              minHeight: 6,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: progress),
+              duration: MediaQuery.of(context).disableAnimations
+                  ? Duration.zero
+                  : const Duration(milliseconds: 400),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, _) => LinearProgressIndicator(
+                value: value,
+                minHeight: 6,
+                backgroundColor: theme.colorScheme.surfaceContainerHighest,
+              ),
             ),
           ),
           const SizedBox(height: 6),
