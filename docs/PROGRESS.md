@@ -4,6 +4,131 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-001: establish the PromptList design system
+
+**Why this, first:** This is the first iteration under Design Evolution
+mode (`docs/DESIGN_RALPH.md`). Inspecting the app as it existed before
+this change, every screen was built entirely from default Material 3
+widgets with no shared visual identity: a stock `AppBar`, a stock
+`NavigationBar`, a stock `FloatingActionButton.extended`, identical
+16px-radius `Card`-style surfaces on both the Lists and Templates
+screens, a default square `Checkbox`, and inconsistent `TextField`
+borders (some screens used `OutlineInputBorder()`, others none at all).
+The only deliberate choice already in place was the terracotta seed
+color from TASK-063. Per `DESIGN_RALPH.md`'s guidance that early
+iterations should tackle the design system/palette/typography/major
+surfaces before individual screens, this was the highest-leverage
+starting point: one change here improves every screen at once.
+
+**Done:** Added `lib/app/theme.dart` (`PromptListTheme`), replacing the
+two inline `ThemeData` blocks in `app.dart`. Kept the existing
+terracotta seed (`0xFF9C4A2E`, still not blue/purple) but built out a
+full set of component themes so the seed's identity actually reaches
+every widget instead of stopping at `colorScheme`:
+
+-   **Shape language:** a new `AppShapes.card` --- an asymmetric
+    rounded-rectangle (20/6/6/20) used for every tappable content
+    surface --- reads as an intentional cut rather than the uniform
+    rounded rectangle every default Flutter app reaches for. Buttons,
+    inputs, and dialogs get their own consistent-but-distinct radii
+    (14 for buttons/inputs, 24 for dialogs) instead of M3's default
+    full-stadium buttons.
+-   **Typography:** a custom `TextTheme` layered on top of the M3
+    default --- bolder, tighter-tracked headings (`headlineSmall`,
+    `titleLarge`), a new `AppEyebrowText` widget (small, uppercase,
+    letter-spaced, primary-colored) for quiet structural labels like
+    Templates' "Built-in"/"My Templates" group headings.
+-   **Checkbox/completion treatment:** themed to a solid-fill circular
+    checkbox (`CircleBorder`) instead of Material's default square ---
+    a small but genuinely checklist-specific piece of identity,
+    directly called out as a category worth owning in `CLAUDE.md`.
+-   **Inputs:** one consistent filled, border-on-focus
+    `InputDecorationTheme` used everywhere, replacing the per-screen
+    ad hoc `OutlineInputBorder()` calls (or lack thereof) in
+    `ai_create_screen.dart`, `ai_modify_list_dialog.dart`, and
+    `list_detail_screen.dart`'s add-item fields.
+-   **AppBar/NavigationBar/FAB:** flat (zero-elevation) app bars with
+    bold titles; a themed navigation-bar indicator; a FAB using a solid
+    `colorScheme.primary` fill (not `primaryContainer`) so the single
+    primary create action reads as the clear call-to-action rather than
+    blending into the same tonal surface as ordinary content cards ---
+    a contrast problem caught during visual QA on the Android emulator
+    (`primaryContainer` in this seed's light scheme is a very pale
+    tint, nearly indistinguishable from the card background; `primary`
+    is the same strong terracotta already used for progress bars).
+-   Also themed: dialogs, popup menus, snackbars (floating), dividers,
+    and buttons (all four families), so the system covers everything
+    `DESIGN_RALPH.md` lists under "Design System" in one pass.
+
+Added `lib/core/ui/app_card.dart` (`AppCard`): a reusable
+Material+InkWell wrapper using `AppShapes.card`, replacing the
+duplicated ad hoc `Material`/`InkWell`/`BorderRadius.circular(16)` block
+that previously existed independently in both `_ListCard`
+(`lists_screen.dart`) and `_TemplateCard` (`templates_screen.dart`) ---
+per `DESIGN_RALPH.md`'s "prefer reusable design-system components over
+one-off styling."
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (231/231 passing, unchanged count --- this
+iteration is visual/theme-only, no behavior changed). Updated
+`templates_screen_test.dart`'s two heading assertions from `'Built-in'`/
+`'My Templates'` to `'BUILT-IN'`/`'MY TEMPLATES'` to match the new
+`AppEyebrowText` widget's uppercase rendering --- a legitimate UI
+change, not a weakened test.
+
+Visually QA'd on the Android emulator (release build) in both light and
+dark mode: Lists (empty and populated), Templates (grouped), a list's
+items (unchecked and checked --- the circular-checkbox completion
+treatment reads clearly in both themes), the "New list" dialog, and
+system dark mode via `adb shell cmd uimode night yes`. Caught and fixed
+one real defect this way (the FAB contrast issue above) rather than
+just eyeballing the diff. Also hit an unrelated environment gotcha
+while verifying the fix: a `flutter build apk --release` run reused a
+stale APK on this machine (matching this repo's known history of
+flaky/cached Flutter tooling behavior on this machine, see TASK-070)
+--- `flutter clean` before rebuilding resolved it. Worth remembering for
+future Design Ralph iterations that check a rebuilt APK visually: if a
+code change to `lib/` doesn't appear to take effect after a rebuild,
+`flutter clean` first before concluding the code itself is wrong.
+
+**What remains visually weak (starting hypotheses for the next
+iteration, not commitments):**
+
+-   The AI Create screen (`ai_create_screen.dart`) is still just a
+    top-aligned headline + text field + button in a mostly-empty
+    screen --- the single most distinctive surface in the product per
+    `CLAUDE.md` ("the AI-create experience should be one of the app's
+    most distinctive surfaces") currently has the least visual identity
+    of any screen. A strong candidate for the next iteration's single
+    theme.
+-   The AI Create tab still uses `Icons.auto_awesome_outlined`, a
+    literal sparkle --- `CLAUDE.md` explicitly warns against "sparkles
+    as the entire AI identity." Left alone this iteration to keep scope
+    to the system-wide pass, but worth reconsidering once the AI Create
+    screen itself gets real identity, so the icon and the screen tell
+    the same visual story.
+-   Empty states (Lists, Templates, AI Create's blank result state) are
+    icon + two lines of text centered --- functional but generic; once
+    AI-generated illustration/art direction is considered (per
+    `CLAUDE.md`'s "AI-Generated Visual Assets" section), empty states
+    are the lowest-risk place to introduce it.
+-   List/template card surfaces are visually correct but not yet
+    tactile --- no press-state feedback beyond the default `InkWell`
+    ripple, no motion on creation/completion. Motion (per
+    `DESIGN_RALPH.md`'s "Motion" section) hasn't been touched at all
+    yet this run.
+-   Section headers inside a multi-section list still use plain
+    `titleSmall` with no visual distinction from an ordinary line of
+    text apart from weight --- could benefit from the same eyebrow
+    treatment now established for Templates' group headings, or its
+    own distinct treatment.
+
+**Next:** Any of the above, per the next iteration's own inspection ---
+`DESIGN_RALPH.md`'s Iteration Independence rule means this list is a
+starting hypothesis, not a command.
+
+---
+
 ## 2026-09-12 --- TASK-073 resolved: no iOS release currently planned
 (Milestone 7 / MVP complete)
 

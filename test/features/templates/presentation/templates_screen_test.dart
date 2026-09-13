@@ -60,13 +60,15 @@ void main() {
 
       await pumpTemplatesScreen(tester);
 
-      expect(find.text('Built-in'), findsOneWidget);
-      expect(find.text('My Templates'), findsOneWidget);
+      // Group headings render as uppercase eyebrow labels (AppEyebrowText),
+      // so the on-screen text is the upper-cased form of the heading.
+      expect(find.text('BUILT-IN'), findsOneWidget);
+      expect(find.text('MY TEMPLATES'), findsOneWidget);
       expect(find.text('Grocery Run'), findsOneWidget);
       expect(find.text('My Custom List'), findsOneWidget);
       expect(
-        tester.getTopLeft(find.text('Built-in')).dy,
-        lessThan(tester.getTopLeft(find.text('My Templates')).dy),
+        tester.getTopLeft(find.text('BUILT-IN')).dy,
+        lessThan(tester.getTopLeft(find.text('MY TEMPLATES')).dy),
       );
     },
   );
@@ -89,8 +91,8 @@ void main() {
 
     await pumpTemplatesScreen(tester);
 
-    expect(find.text('Built-in'), findsOneWidget);
-    expect(find.text('My Templates'), findsNothing);
+    expect(find.text('BUILT-IN'), findsOneWidget);
+    expect(find.text('MY TEMPLATES'), findsNothing);
   });
 
   driftTestWidgets('tapping a template opens its detail screen', (

@@ -122,7 +122,6 @@ class _AiCreateScreenState extends ConsumerState<AiCreateScreen> {
             textInputAction: TextInputAction.newline,
             decoration: const InputDecoration(
               hintText: 'e.g. "Pack for a 3-day camping trip"',
-              border: OutlineInputBorder(),
             ),
             onChanged: (_) => setState(() {}),
           ),

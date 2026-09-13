@@ -45,7 +45,6 @@ class _AiModifyListDialogState extends State<_AiModifyListDialog> {
         maxLines: 4,
         decoration: const InputDecoration(
           hintText: 'e.g. "alphabetize this" or "add the Disney+ shows"',
-          border: OutlineInputBorder(),
         ),
         onChanged: (_) => setState(() {}),
       ),

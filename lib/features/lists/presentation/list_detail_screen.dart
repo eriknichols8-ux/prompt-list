@@ -440,7 +440,6 @@ class _SimpleItemsViewState extends ConsumerState<_SimpleItemsView> {
                     controller: _addController,
                     decoration: const InputDecoration(
                       hintText: 'Add an item',
-                      border: OutlineInputBorder(),
                       isDense: true,
                     ),
                     textInputAction: TextInputAction.done,

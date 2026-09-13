@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:promptlist/core/ui/app_card.dart';
 import 'package:promptlist/features/lists/domain/list_summary.dart';
 import 'package:promptlist/features/lists/presentation/create_list_dialog.dart';
 import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
@@ -65,9 +66,6 @@ class _ListsScreenState extends ConsumerState<ListsScreen> {
                         tooltip: 'Clear search',
                         onPressed: _clearSearch,
                       ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
               ),
               onChanged: (value) => setState(() => _query = value),
             ),
@@ -198,41 +196,33 @@ class _ListCard extends StatelessWidget {
         ? 0.0
         : summary.completedItems / summary.totalItems;
 
-    return Material(
-      color: theme.colorScheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => ListDetailScreen(listId: summary.list.id),
-          ),
+    return AppCard(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ListDetailScreen(listId: summary.list.id),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(summary.list.title, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 12),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 6,
-                  backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                summary.totalItems == 0
-                    ? 'No items yet'
-                    : '${summary.completedItems}/${summary.totalItems} completed',
-                style: theme.textTheme.bodySmall,
-              ),
-            ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(summary.list.title, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: theme.colorScheme.surfaceContainerHighest,
+            ),
           ),
-        ),
+          const SizedBox(height: 6),
+          Text(
+            summary.totalItems == 0
+                ? 'No items yet'
+                : '${summary.completedItems}/${summary.totalItems} completed',
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
       ),
     );
   }

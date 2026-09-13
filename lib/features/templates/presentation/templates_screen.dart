@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:promptlist/app/theme.dart';
 import 'package:promptlist/core/database/app_database.dart';
+import 'package:promptlist/core/ui/app_card.dart';
 import 'package:promptlist/features/templates/presentation/template_detail_screen.dart';
 import 'package:promptlist/features/templates/presentation/template_providers.dart';
 
@@ -40,7 +42,6 @@ class _TemplatesList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     // watchTemplates() already orders built-ins first, then
     // alphabetically, so a stable partition preserves that order
     // within each group.
@@ -51,8 +52,8 @@ class _TemplatesList extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (builtIns.isNotEmpty) ...[
-          Text('Built-in', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
+          const AppEyebrowText('Built-in'),
+          const SizedBox(height: 10),
           for (final template in builtIns) ...[
             _TemplateCard(template: template),
             const SizedBox(height: 12),
@@ -60,8 +61,8 @@ class _TemplatesList extends StatelessWidget {
           const SizedBox(height: 8),
         ],
         if (userTemplates.isNotEmpty) ...[
-          Text('My Templates', style: theme.textTheme.titleSmall),
-          const SizedBox(height: 8),
+          const AppEyebrowText('My Templates'),
+          const SizedBox(height: 10),
           for (final template in userTemplates) ...[
             _TemplateCard(template: template),
             const SizedBox(height: 12),
@@ -81,29 +82,21 @@ class _TemplateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Material(
-      color: theme.colorScheme.surfaceContainerHigh,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => TemplateDetailScreen(templateId: template.id),
-          ),
+    return AppCard(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => TemplateDetailScreen(templateId: template.id),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(template.name, style: theme.textTheme.titleMedium),
-              if (template.description != null) ...[
-                const SizedBox(height: 4),
-                Text(template.description!, style: theme.textTheme.bodySmall),
-              ],
-            ],
-          ),
-        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(template.name, style: theme.textTheme.titleMedium),
+          if (template.description != null) ...[
+            const SizedBox(height: 4),
+            Text(template.description!, style: theme.textTheme.bodySmall),
+          ],
+        ],
       ),
     );
   }
