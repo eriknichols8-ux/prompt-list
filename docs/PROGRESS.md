@@ -4,6 +4,94 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-005: illustrated empty states
+
+**Why this:** Both Lists' and Templates' empty states were still a
+generic centered icon (or, for Templates, literally just plain text ---
+`Center(child: Text('No templates yet.'))`, the single least-designed
+surface left in the app) even after four iterations of establishing a
+real visual identity elsewhere. `CLAUDE.md`'s "AI-Generated Visual
+Assets" section explicitly calls out illustrated empty states as a
+good, encouraged use of imagery, and `DESIGN_RALPH.md`'s own guidance
+covers exactly this situation: "if image generation is unavailable, do
+not block the loop... document the intended asset/prompt and use a
+tasteful fallback." No image-generation tool is available in this
+environment, so this iteration is that fallback --- a bespoke vector
+illustration rather than either blocking on real artwork or leaving
+the empty states generic.
+
+**Done:** Added `StackedCardsIllustration`
+(`lib/core/ui/stacked_cards_illustration.dart`): a small `CustomPainter`
+hero graphic --- two rotated, tonal "back" cards (tertiaryContainer,
+surfaceContainerHigh) peeking out from behind a straight-on
+primaryContainer "front" card carrying two short line marks plus a
+variant-specific accent. Deliberately reuses the same "lines on a
+card" visual vocabulary as `PromptToListIcon` (DESIGN-002) rather than
+inventing a third motif, so the illustration reads as part of the same
+design language instead of a one-off. Two variants:
+
+-   `StackedCardsVariant.checklist` (Lists' empty state): the front
+    card's accent is a checkmark + line, the same "your input becomes
+    a checked item" mark used on the AI-create button/nav icon.
+-   `StackedCardsVariant.templates` (Templates' empty state): two
+    small overlapping rounded squares, a "duplicate/reusable" mark ---
+    deliberately not a checkmark, since templates aren't about
+    completion. (Originally sketched as a folded-paper corner, but
+    that shape would have visually clipped past the card's rounded
+    corner; the overlapping-squares mark sits safely inside the card
+    instead and reads just as clearly.)
+
+Replaced the bare icon in `lists_screen.dart`'s `_EmptyListsState` and
+gave `templates_screen.dart`'s `_EmptyTemplatesState` a full treatment
+for the first time (illustration + title + a real supporting line,
+matching the pattern every other empty state in the app already used) ---
+this state is effectively unreachable in normal use since the 5
+built-in templates can never all be deleted, but it existed as
+reachable code and was the most under-designed corner of the app, so
+it was worth bringing up to the same standard as everywhere else
+rather than leaving a bare-text dead code path.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (232/232 passing). Updated one test assertion in
+`templates_screen_test.dart` (`'No templates yet.'` -> `'No templates
+yet'`, dropping the trailing period to match the phrasing pattern
+every other empty-state title in the app already uses, e.g. "No lists
+yet") --- a copy change, not a weakened assertion.
+
+Visually verified both variants on the Android emulator (release
+build): cleared app data to reach the Lists empty state in both light
+and dark mode (the illustration adapts correctly to both color
+schemes); temporarily swapped the Lists empty state to render the
+`templates` variant to confirm its geometry directly (impossible to
+reach in the real app, per above), confirmed it read clearly as a
+"duplicate" mark, then reverted the swap before committing --- `git
+diff` confirmed the working tree matched the intended checklist-variant
+change exactly, with no leftover debug swap.
+
+**What remains visually weak (starting hypothesis, not a commitment):**
+
+-   The search "no results" empty state (`lists_screen.dart`'s
+    `_NoSearchResultsState`) still uses a plain Material icon
+    (`Icons.search_off`) rather than the new illustration --- left
+    alone deliberately since it's a transient, less prominent state,
+    but could pick up a smaller version of the same illustration
+    language for full consistency if a future iteration judges it
+    worth the screen space.
+-   No motion exists yet beyond item completion (DESIGN-003): item
+    add/remove, list creation, and the AI generate/preview/accept flow
+    are all still instant beyond Material's own default transitions.
+-   The Lists screen's per-card `LinearProgressIndicator` still jumps
+    to its new value instantly rather than animating.
+-   Five iterations in, `Settings` is still the one screen with zero
+    design investment (`Center(child: Text('Settings'))`) --- a
+    product-completeness gap rather than a styling one, so still out
+    of scope for a pure design pass, but the gap is now more visible by
+    contrast with everything else.
+
+**Next:** Any of the above, per the next iteration's own inspection.
+
+---
+
 ## 2026-09-12 --- DESIGN-004: give section headers real structure
 
 **Why this:** DESIGN-002 and DESIGN-003 both carried forward the same

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promptlist/core/ui/app_card.dart';
+import 'package:promptlist/core/ui/stacked_cards_illustration.dart';
 import 'package:promptlist/features/lists/domain/list_summary.dart';
 import 'package:promptlist/features/lists/presentation/create_list_dialog.dart';
 import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
@@ -144,12 +145,10 @@ class _EmptyListsState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.checklist_outlined,
-              size: 56,
-              color: Theme.of(context).colorScheme.primary,
+            const StackedCardsIllustration(
+              variant: StackedCardsVariant.checklist,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               'No lists yet',
               style: Theme.of(context).textTheme.titleMedium,

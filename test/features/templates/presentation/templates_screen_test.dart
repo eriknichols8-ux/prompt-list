@@ -29,7 +29,7 @@ void main() {
   ) async {
     await pumpTemplatesScreen(tester);
 
-    expect(find.text('No templates yet.'), findsOneWidget);
+    expect(find.text('No templates yet'), findsOneWidget);
   });
 
   driftTestWidgets(

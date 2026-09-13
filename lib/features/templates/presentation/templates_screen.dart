@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:promptlist/app/theme.dart';
 import 'package:promptlist/core/database/app_database.dart';
 import 'package:promptlist/core/ui/app_card.dart';
+import 'package:promptlist/core/ui/stacked_cards_illustration.dart';
 import 'package:promptlist/features/templates/presentation/template_detail_screen.dart';
 import 'package:promptlist/features/templates/presentation/template_providers.dart';
 
@@ -31,7 +32,31 @@ class _EmptyTemplatesState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('No templates yet.'));
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const StackedCardsIllustration(
+              variant: StackedCardsVariant.templates,
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'No templates yet',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Save one of your own lists as a template to reuse its '
+              'structure later.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
