@@ -4,6 +4,118 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-002: give the AI Create screen a real identity
+
+**Why this:** Re-inspecting the app fresh per `DESIGN_RALPH.md`'s Core
+Rule (evaluate what currently exists, not a prior plan), DESIGN-001's
+own "what remains visually weak" note was still accurate: AI Create was
+a bare headline, text field, and button in a mostly-empty screen ---
+the weakest-identity surface in the app despite `CLAUDE.md` calling the
+AI-create experience out as one that "should be one of the app's most
+distinctive surfaces." Its nav icon was also still a literal sparkle
+(`Icons.auto_awesome`), which `CLAUDE.md`'s Visual Design Direction
+explicitly names as a pattern to avoid. Both problems shared one fix:
+giving this screen (and its icon) real, specific identity.
+
+**Done:**
+
+-   Added `PromptToListIcon`
+    (`lib/core/ui/prompt_to_list_icon.dart`): a small `CustomPainter`
+    glyph --- a card with two short "typed" lines above a divider and a
+    checkmark + one line below it, reading as "your words become a
+    checked item" instead of a generic sparkle. Reads `IconTheme.of`
+    for its default size/color so it drops into any context (nav bar,
+    button) that already colors its icons via `IconTheme`, including
+    automatically greying out correctly when a button is disabled.
+    Replaced `Icons.auto_awesome_outlined`/`Icons.auto_awesome` in
+    `root_shell.dart`'s "AI Create" `NavigationDestination` with it
+    (outlined vs. a bolder `filled: true` variant, mirroring how the
+    other two tabs already swap outlined-for-filled on selection), and
+    used it again as the leading icon on the "Make me a list" button ---
+    the same motif represents the feature everywhere it appears, per
+    `CLAUDE.md`'s "a memorable AI-create control."
+-   Redesigned `AiCreateScreen`: the prompt field now lives inside a
+    `AppShapes.card`-shaped compose panel labeled with the
+    `AppEyebrowText('Your request')` established in DESIGN-001, with a
+    new supporting line under the headline ("Type a few words --
+    you'll review the draft before anything is saved.") that puts the
+    preview-before-accept promise from `AI_CONTRACT.md` into the
+    product's own voice instead of leaving it implicit. Below the
+    compose card, four tappable suggestion chips (`ActionChip`:
+    "Weekend trip packing," "Weekly grocery run," "Moving day
+    checklist," "Movie night picks") fill the prompt field on tap ---
+    solving the blank-page problem and the screen's excess empty space
+    in one move, without behaving like a chatbot (tapping only fills
+    the field; the user still explicitly submits and still reviews the
+    generated draft through the unchanged preview flow). The loading
+    state is now a composed status card (same card shape, "Drafting
+    your list…" label) rather than a bare spinner floating in empty
+    space, though it keeps the exact same `CircularProgressIndicator` +
+    `Cancel` structure underneath.
+-   Deliberately did **not** add a repeating/looping animation to the
+    loading state after tracing how it would interact with this
+    screen's existing tests: several tests assert on exact widget
+    presence (`findsNothing` for the idle button, `findsOneWidget` for
+    the spinner) after a single `tester.pump()` while a
+    `_ControllableGenerationService` holds the request open, and
+    `AnimatedSwitcher`-style cross-fades keep the outgoing child mounted
+    (just fading) for their full duration --- which would have made the
+    "Make me a list" text still findable immediately after switching to
+    the loading state, breaking `shows a loading state and blocks
+    duplicate submission while generating` without a genuine behavior
+    change to justify rewriting it. A repeating `AnimationController`
+    also risks `pumpAndSettle()` timeouts if a future test ever awaits
+    settle while still loading. Kept the state swap as a plain
+    conditional instead --- the visual upgrade (composed card, status
+    copy) still lands without that risk.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (232/232 passing, up from 231). Added one new
+test to `ai_create_screen_test.dart` --- tapping a suggestion chip fills
+the prompt field and enables submit --- since this is new interactive
+behavior, per `CLAUDE.md`'s "add/update tests when interaction behavior
+changes." Every pre-existing test in that file passed unchanged,
+confirming the loading/cancel/error/preview contract was preserved
+exactly.
+
+Visually QA'd on the Android emulator (release build) in light and dark
+mode: the idle compose screen, a suggestion chip filling the field and
+enabling the button, the resulting preview screen (untouched code,
+confirmed it still inherits the design system correctly), and the
+nav-bar icon at actual small size in both selected/unselected states.
+The custom icon reads clearly as a distinct glyph from the Lists tab's
+checklist icon at nav-bar size in both themes.
+
+**What remains visually weak (starting hypothesis, not a commitment):**
+
+-   The loading state's composed-card treatment couldn't be visually
+    confirmed against the fake service, which resolves too fast to
+    screen-capture (by design --- it's deterministic and instant, per
+    `AI_CONTRACT.md`'s testing rules). It's covered by widget tests and
+    reasoned about above, but a future iteration with a slow/real
+    provider configured could confirm it looks right in practice, or
+    revisit adding motion there via a technique that doesn't fight
+    `pumpAndSettle` (e.g. a bounded, non-repeating animation that
+    completes and holds, rather than one that loops for the duration of
+    the wait).
+-   Section headers inside a multi-section list (`list_detail_screen.dart`)
+    still use plain `titleSmall` with no visual distinction from
+    ordinary text apart from weight, unlike the eyebrow treatment now
+    used in two other places (Templates' group headings, AI Create's
+    "Your request" label). A natural next candidate for consistency.
+-   Empty states (Lists, Templates) are still icon + two lines of
+    centered text --- functional but generic; still the lowest-risk
+    place to introduce the AI-generated illustration/art direction
+    `CLAUDE.md`'s "AI-Generated Visual Assets" section encourages.
+-   No motion has been added anywhere yet this run beyond the implicit
+    ripple/transition defaults Material already provides --- list-item
+    completion, drag-and-drop settle, and list creation are all still
+    instant per `DESIGN_RALPH.md`'s Motion section.
+
+**Next:** Any of the above, per the next iteration's own inspection.
+
+---
+
 ## 2026-09-12 --- DESIGN-001: establish the PromptList design system
 
 **Why this, first:** This is the first iteration under Design Evolution

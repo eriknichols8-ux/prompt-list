@@ -67,6 +67,25 @@ void main() {
     expect(enabledButton.onPressed, isNotNull);
   });
 
+  testWidgets('tapping a suggestion chip fills the prompt and enables submit', (
+    tester,
+  ) async {
+    await pumpScreen(tester, FakeListGenerationService());
+
+    final button = tester.widget<FilledButton>(find.byType(FilledButton));
+    expect(button.onPressed, isNull);
+
+    await tester.tap(find.text('Weekend trip packing'));
+    await tester.pump();
+
+    final textField = tester.widget<TextField>(find.byType(TextField));
+    expect(textField.controller!.text, 'Weekend trip packing');
+    final enabledButton = tester.widget<FilledButton>(
+      find.byType(FilledButton),
+    );
+    expect(enabledButton.onPressed, isNotNull);
+  });
+
   testWidgets('rejects a whitespace-only prompt', (tester) async {
     await pumpScreen(tester, FakeListGenerationService());
 

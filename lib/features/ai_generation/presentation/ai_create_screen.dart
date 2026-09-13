@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:promptlist/app/theme.dart';
+import 'package:promptlist/core/ui/prompt_to_list_icon.dart';
 import 'package:promptlist/features/lists/presentation/list_detail_screen.dart';
 import 'package:promptlist/features/lists/presentation/list_providers.dart';
 
@@ -7,6 +9,17 @@ import '../domain/ai_generation_result.dart';
 import '../domain/generated_list.dart';
 import 'ai_generation_providers.dart';
 import 'generated_list_preview_screen.dart';
+
+/// A handful of starting points so the prompt field doesn't open on a
+/// blank page -- tapping one fills the field rather than submitting
+/// immediately, since the user should always land on the same
+/// review-before-accept path regardless of how the prompt was entered.
+const _suggestions = [
+  'Weekend trip packing',
+  'Weekly grocery run',
+  'Moving day checklist',
+  'Movie night picks',
+];
 
 /// "Describe the list you need" -- the entry point for AI-assisted list
 /// creation.
@@ -101,8 +114,19 @@ class _AiCreateScreenState extends ConsumerState<AiCreateScreen> {
     });
   }
 
+  void _applySuggestion(String suggestion) {
+    setState(() {
+      _controller.text = suggestion;
+      _controller.selection = TextSelection.collapsed(
+        offset: suggestion.length,
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -110,49 +134,114 @@ class _AiCreateScreenState extends ConsumerState<AiCreateScreen> {
         children: [
           Text(
             'Describe the list you need',
-            style: Theme.of(context).textTheme.headlineSmall,
+            style: theme.textTheme.headlineSmall,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _controller,
-            enabled: !_isGenerating,
-            minLines: 3,
-            maxLines: 6,
-            textInputAction: TextInputAction.newline,
-            decoration: const InputDecoration(
-              hintText: 'e.g. "Pack for a 3-day camping trip"',
+          const SizedBox(height: 8),
+          Text(
+            "Type a few words -- you'll review the draft before anything "
+            'is saved.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
             ),
-            onChanged: (_) => setState(() {}),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 24),
+          DecoratedBox(
+            decoration: ShapeDecoration(
+              shape: AppShapes.card,
+              color: theme.colorScheme.surfaceContainerHigh,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppEyebrowText('Your request'),
+                  const SizedBox(height: 10),
+                  TextField(
+                    controller: _controller,
+                    enabled: !_isGenerating,
+                    minLines: 3,
+                    maxLines: 6,
+                    textInputAction: TextInputAction.newline,
+                    decoration: const InputDecoration(
+                      hintText: 'e.g. "Pack for a 3-day camping trip"',
+                    ),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final suggestion in _suggestions)
+                ActionChip(
+                  label: Text(suggestion),
+                  onPressed: _isGenerating
+                      ? null
+                      : () => _applySuggestion(suggestion),
+                ),
+            ],
           ),
           if (_errorMessage != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
               _errorMessage!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
+              style: TextStyle(color: theme.colorScheme.error),
+              textAlign: TextAlign.center,
             ),
           ],
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           if (_isGenerating)
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
+            DecoratedBox(
+              decoration: ShapeDecoration(
+                shape: AppShapes.card,
+                color: theme.colorScheme.surfaceContainerHigh,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 16,
                 ),
-                const SizedBox(width: 12),
-                TextButton(
-                  onPressed: _cancelGeneration,
-                  child: const Text('Cancel'),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Drafting your list…',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    const SizedBox(width: 12),
+                    TextButton(
+                      onPressed: _cancelGeneration,
+                      child: const Text('Cancel'),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             )
           else
             FilledButton(
               onPressed: _canSubmit ? _submit : null,
-              child: const Text('Make me a list'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  PromptToListIcon(size: 20),
+                  SizedBox(width: 10),
+                  Text('Make me a list'),
+                ],
+              ),
             ),
         ],
       ),

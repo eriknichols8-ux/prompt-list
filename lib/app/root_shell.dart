@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/ui/prompt_to_list_icon.dart';
 import '../features/ai_generation/presentation/ai_create_screen.dart';
 import '../features/lists/presentation/lists_screen.dart';
 import '../features/settings/presentation/settings_screen.dart';
@@ -33,8 +34,8 @@ class _RootShellState extends State<RootShell> {
       label: 'Templates',
     ),
     NavigationDestination(
-      icon: Icon(Icons.auto_awesome_outlined),
-      selectedIcon: Icon(Icons.auto_awesome),
+      icon: PromptToListIcon(),
+      selectedIcon: PromptToListIcon(filled: true),
       label: 'AI Create',
     ),
   ];
