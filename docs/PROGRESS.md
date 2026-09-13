@@ -4,6 +4,70 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-009: distinct treatment for destructive confirmations
+
+**Why this:** With two iterations left in this run's budget, this was
+a consistency/dialog sweep rather than new surface area, per
+`DESIGN_RALPH.md`'s late-iteration guidance. Reviewed every dialog in
+the app (`CreateListDialog`, `RenameListDialog`, `EditItemDialog`,
+`SectionDialog`, `MoveToSectionDialog`, `RenameTemplateDialog`,
+`SaveAsTemplateDialog`, `AiModifyListDialog`, `ConfirmDialog`) against
+the design system: most already inherit the shared `DialogThemeData`/
+`InputDecorationTheme` correctly and needed nothing (confirmed
+visually, including that `MoveToSectionDialog`'s `SimpleDialog` shares
+the same shape/title theming as every `AlertDialog`-based one despite
+being a different widget type). The one genuine gap: `showConfirmDialog`
+--- used for delete list, delete section, delete template, and clear
+completed, every one of them a real destructive action --- rendered
+with the same neutral terracotta-accent styling as any ordinary dialog.
+Nothing distinguished "this is about to delete something" from "please
+enter a name," even though `DESIGN_RALPH.md`'s Accessibility section
+specifically calls for non-color state indicators, and a plain
+same-colored confirm button is exactly the kind of low-signal
+destructive-action UI that's easy to tap through without noticing.
+
+**Done:** `showConfirmDialog` (`lib/core/ui/confirm_dialog.dart`) now
+renders `AlertDialog`'s built-in `icon` slot with
+`Icons.warning_amber_rounded` in `colorScheme.error`, and the confirm
+button is explicitly styled with `colorScheme.error`/`onError` instead
+of the default primary-colored `FilledButton`. No flag was added to
+make this conditional --- every one of the four existing call sites is
+already a genuinely destructive, hard-to-fully-undo-or-disruptive
+action, so a parameter no caller would ever set to `false` would just
+be unused complexity.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (232/232 passing, unchanged --- no test inspects
+`ConfirmDialog`'s colors or icon directly, only its text/behavior, so
+nothing needed updating). Manually verified on the Android emulator
+(release build) in light and dark mode: the delete-list confirmation
+now shows a clear warning triangle and a red delete button in light
+mode, and an appropriately adapted light-coral/dark-red pairing in dark
+mode (via the same seed-derived `error`/`onError`/`errorContainer`
+tones Material already computes, not a hand-picked color), both
+clearly reading as "this is different from every other dialog" without
+needing to read the text first.
+
+**What remains weak (starting hypothesis, not a commitment):**
+
+-   Item add/remove and list creation still have no motion beyond
+    Material's defaults (carried forward unresolved since DESIGN-003).
+-   This is the second-to-last iteration in this run's budget. Per
+    `DESIGN_RALPH.md`, the final iteration should be a dedicated,
+    broad design QA pass across the whole app (light/dark, edge states,
+    spacing, alignment, final screenshots) rather than another
+    single-theme change --- a full walkthrough of every screen this run
+    touched (and a few it didn't: Templates detail, the AI-modify
+    flow) to catch anything an iteration-by-iteration approach might
+    have missed by only ever looking at one surface at a time.
+
+**Next:** A final whole-app design QA pass, per the above --- though per
+`DESIGN_RALPH.md`'s Iteration Independence rule, the next iteration
+should still confirm this for itself rather than simply following this
+note.
+
+---
+
 ## 2026-09-12 --- DESIGN-008: give the Settings placeholder a real design
 
 **Why this:** Flagged in DESIGN-004, DESIGN-005, and DESIGN-006's
