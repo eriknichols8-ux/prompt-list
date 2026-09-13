@@ -4,6 +4,40 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- TASK-073 resolved: no iOS release currently planned
+(Milestone 7 / MVP complete)
+
+**Done:** The user confirmed there is no current plan to release this
+app on iOS. Recorded as **ADR-010** in `docs/DECISIONS.md`: the iOS
+build-verification criterion in TASK-073 is explicitly scoped to
+"before iOS release," so with no iOS release planned it doesn't apply
+right now rather than being permanently blocked. iOS platform support
+itself is untouched (ADR-001 stands; the iOS target/folder remain in
+the codebase and buildable later without rework) --- this only affects
+whether release readiness is gated on verifying it today.
+
+Marked TASK-073 `[x]` in `docs/PLAN.md` with a note pointing at
+ADR-010, since every other criterion (format, analyze, full test
+suite including integration tests, Android release build, no secrets,
+product spec accuracy) already passed on the from-scratch verification
+run documented in the previous entry below.
+
+**This completes every task in `docs/PLAN.md`.** Milestones 0 through
+7 are all done: local list foundation, sections, templates, AI
+generation, AI list editing, UX/reliability polish, and release
+readiness (Android). The project has reached the point CLAUDE.md
+describes as the MVP Gate being satisfied.
+
+**Next:** Per `CLAUDE.md`'s Autonomous Evolution authority, the next
+natural step is inventing and implementing new improvements beyond the
+original spec --- selected for user value, fit, distinctiveness,
+implementation risk, complexity/bloat, testability, and visual/
+interaction value, each tracked as a new `EVOLVE-###` entry in
+`PLAN.md`. Awaiting the user's direction on whether/when to begin that
+phase.
+
+---
+
 ## 2026-09-12 --- TASK-073 blocked on iOS build verification
 
 **Done (verified on this machine):**

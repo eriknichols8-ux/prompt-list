@@ -416,7 +416,7 @@ development remains straightforward.
 
 **Dependencies:** TASK-045.
 
-### [ ] TASK-073 --- Release verification
+### [x] TASK-073 --- Release verification
 
 **Goal:** Produce a release candidate.
 
@@ -427,6 +427,13 @@ environment before iOS release. - No secrets or debug-only credentials
 are present. - Product spec reflects shipped behavior.
 
 **Dependencies:** TASK-070, TASK-071, TASK-072.
+
+**Note (ADR-010):** the iOS criterion is scoped to "before iOS
+release." The user has confirmed there is no current plan to release
+on iOS, so that criterion doesn't apply right now rather than being
+unmet --- every other criterion passed on a from-scratch verification
+run. Revisit the iOS build check in an actual macOS/Xcode environment
+if/when an iOS release is planned.
 
 ## Post-MVP Parking Lot
 

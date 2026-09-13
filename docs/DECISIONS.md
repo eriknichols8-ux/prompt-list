@@ -177,6 +177,37 @@ secure architecture" with a concrete design.
 
 ------------------------------------------------------------------------
 
+## ADR-010 --- Android-only release target for now
+
+**Status:** Accepted
+
+**Decision:** iOS build verification (TASK-073's macOS/Xcode
+requirement) is not required for this project to be considered
+release-ready. The user has confirmed there is no current plan to
+release on iOS. Android remains the actively verified release target;
+`flutter build apk --release` and the full test suite are the release
+gate.
+
+**Reason:** TASK-073's own acceptance criterion is scoped to "before
+iOS release," not "before every release." With no iOS release planned,
+that criterion doesn't apply yet rather than being permanently
+unmet. This was a genuine environment blocker (no macOS available in
+this session) until the user clarified iOS isn't a current goal at
+all, which resolves it outright instead of merely deferring it.
+
+**Consequences:** The codebase keeps its iOS platform folder and
+target (ADR-001 is not reversed --- nothing here removes iOS support
+from the project), so iOS remains buildable later without rework.
+Future Ralph loops should not block release readiness on an iOS build
+check unless the user asks for iOS release again, at which point
+TASK-073's iOS criterion becomes active again and needs an actual
+macOS/Xcode environment to verify.
+
+**Supersedes:** none; narrows TASK-073's scope rather than reversing
+any prior ADR.
+
+------------------------------------------------------------------------
+
 ## ADR Template
 
 ### ADR-### --- Title
