@@ -23,30 +23,19 @@ At the start of every Ralph iteration read:
 
 Repository state, not prior-context memory, is the source of truth.
 
-## Operating Modes
+## Current Development Mode
 
-### Build a mileston
+The functional MVP is complete.
 
-While any required MVP task is incomplete, work through `PLAN.md` in
-dependency order.
+Unless explicitly told otherwise, current Ralph runs are DESIGN EVOLUTION runs.
 
+For design Ralph runs, read and follow:
 
-For every milestone:
+`docs/DESIGN_RALPH.md`
 
-1.  inspect existing code/tests;
-2.  ask questions if needed
-3.  implement one task at a time;
-4.  run focused tests at end of milestone;
-5.  run project verification;
-6.  fix all failures;
-7.  update `PLAN.md` and `PROGRESS.md`;
-8.  inspect the diff;
-9.  commit;
-10. push;
-11. verify the push;
-12. Stop
+Preserve working functionality. Prioritize visual identity, usability, interaction quality, cohesion, and polish.
 
-Do not stop merely because one task succeeded.
+Do not resume the original MVP backlog simply because it exists in PLAN.md.
 
 
 ## MVP Gate Requirements
