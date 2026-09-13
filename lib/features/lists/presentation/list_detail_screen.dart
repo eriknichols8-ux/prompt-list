@@ -758,6 +758,7 @@ class _ItemRow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
 
     return Semantics(
       customSemanticsActions: {
@@ -765,18 +766,22 @@ class _ItemRow extends ConsumerWidget {
         const CustomSemanticsAction(label: 'Move down'): ?onMoveDown,
       },
       child: ListTile(
-        leading: Checkbox(
+        leading: _AnimatedCompletionCheckbox(
           value: item.completed,
+          reduceMotion: reduceMotion,
           onChanged: (_) => _toggleCompleted(ref),
         ),
-        title: Text(
-          item.content,
+        title: AnimatedDefaultTextStyle(
+          duration: reduceMotion
+              ? Duration.zero
+              : const Duration(milliseconds: 200),
           style: item.completed
-              ? theme.textTheme.bodyLarge?.copyWith(
+              ? (theme.textTheme.bodyLarge ?? const TextStyle()).copyWith(
                   decoration: TextDecoration.lineThrough,
                   color: theme.colorScheme.onSurfaceVariant,
                 )
-              : theme.textTheme.bodyLarge,
+              : (theme.textTheme.bodyLarge ?? const TextStyle()),
+          child: Text(item.content),
         ),
         onTap: () => _editItem(context, ref),
         trailing: Row(
@@ -803,6 +808,75 @@ class _ItemRow extends ConsumerWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Wraps the completion [Checkbox] with a brief "pop" when an item
+/// becomes checked -- a small piece of tactile feedback matching the
+/// circular completion treatment established for PromptList, rather
+/// than the checkbox silently flipping state. Un-checking plays no
+/// animation, since the flourish is meant to reward completing an
+/// item, not every toggle.
+class _AnimatedCompletionCheckbox extends StatefulWidget {
+  const _AnimatedCompletionCheckbox({
+    required this.value,
+    required this.onChanged,
+    required this.reduceMotion,
+  });
+
+  final bool value;
+  final ValueChanged<bool?> onChanged;
+  final bool reduceMotion;
+
+  @override
+  State<_AnimatedCompletionCheckbox> createState() =>
+      _AnimatedCompletionCheckboxState();
+}
+
+class _AnimatedCompletionCheckboxState
+    extends State<_AnimatedCompletionCheckbox>
+    with SingleTickerProviderStateMixin {
+  late final _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 220),
+  );
+  late final _scale = TweenSequence<double>([
+    TweenSequenceItem(
+      weight: 40,
+      tween: Tween(
+        begin: 1.0,
+        end: 1.22,
+      ).chain(CurveTween(curve: Curves.easeOut)),
+    ),
+    TweenSequenceItem(
+      weight: 60,
+      tween: Tween(
+        begin: 1.22,
+        end: 1.0,
+      ).chain(CurveTween(curve: Curves.easeIn)),
+    ),
+  ]).animate(_controller);
+
+  @override
+  void didUpdateWidget(covariant _AnimatedCompletionCheckbox oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.value && widget.value && !widget.reduceMotion) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ScaleTransition(
+      scale: _scale,
+      child: Checkbox(value: widget.value, onChanged: widget.onChanged),
     );
   }
 }

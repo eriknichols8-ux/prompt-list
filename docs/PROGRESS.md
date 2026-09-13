@@ -4,6 +4,103 @@ Cross-loop handoff notes. Newest entries at the top.
 
 ---
 
+## 2026-09-12 --- DESIGN-003: animate item completion
+
+**Why this:** Re-inspecting the app after DESIGN-002, `DESIGN_RALPH.md`'s
+Motion section had gone entirely untouched --- every interaction still
+resolved instantly with no purposeful motion at all, and completing an
+item is explicitly named as one of the best candidates ("brief
+purposeful motion... for completing an item"). It's also the single
+most frequent interaction in a checklist app, and the DESIGN-001
+circular checkbox treatment made completion visually distinctive but
+not yet tactile: the checkbox and its text still snapped to their
+completed styling with zero transition, which undercut the identity
+that treatment was meant to establish.
+
+**Done:** In `list_detail_screen.dart`'s `_ItemRow`:
+
+-   Added `_AnimatedCompletionCheckbox`, wrapping the completion
+    `Checkbox` in a `ScaleTransition` driven by a `TweenSequence`
+    (1.0 -> 1.22 -> 1.0, ~220ms) that plays only when an item
+    transitions from incomplete to complete --- un-checking plays no
+    animation, since the flourish is meant to reward finishing an item,
+    not every toggle in either direction.
+-   Wrapped the item text in `AnimatedDefaultTextStyle` so the color
+    change (onSurface -> onSurfaceVariant) fades smoothly over ~200ms
+    instead of snapping; the strikethrough itself still appears/
+    disappears instantly, since `TextDecoration` has no meaningful
+    partial/interpolated state to animate through --- a common, accepted
+    limitation (most apps that animate completion styling do the same:
+    animate color, snap the line).
+-   Both animations read `MediaQuery.of(context).disableAnimations` and
+    collapse to `Duration.zero`/no-op when true, per `DESIGN_RALPH.md`'s
+    Accessibility section ("respect reduced-motion accessibility
+    settings").
+-   Deliberately scoped to completion only this iteration, not item
+    add/remove or drag-and-drop settle: `ReorderableListView` already
+    provides its own built-in reorder-settle animation, and adding a
+    genuine "insert" animation for new items would require
+    distinguishing "just added" from "already existed" per row, adding
+    real state-tracking complexity for a lower-value target than
+    completion. Left as a candidate for a future motion-focused
+    iteration if one is warranted.
+
+**Verified:** `dart format .`, `flutter analyze` (no issues), `flutter
+test --concurrency=1` (232/232 passing, same count as after
+DESIGN-002 --- no new tests needed since no new *feature* was added,
+only presentation of an existing one). Updated the existing
+`checking and unchecking an item toggles completion` test: it
+previously read the decoration straight off the `Text` widget's own
+`style` property, which is no longer set directly now that the style
+comes from the `AnimatedDefaultTextStyle` ancestor instead --- updated
+it to locate that ancestor and read its `style.decoration` (using
+`widgetList(...).first` rather than `.single`, since
+`ReorderableListView`/`SliverReorderableList` mounts more than one copy
+of a row's subtree internally, so more than one matching
+`AnimatedDefaultTextStyle` genuinely exists in the tree even though
+only one is visible --- discovered via a `StateError: Too many
+elements` failure when first written with `.single`/`tester.widget`).
+This is a legitimate test update reflecting the intentional animation
+change, not a weakened assertion --- it still explicitly checks the
+decoration flips exactly on check/uncheck.
+
+Manually verified on the Android emulator (release build): created a
+test list, added an item, and toggled its checkbox repeatedly in both
+light and dark mode while watching `adb logcat` for exceptions ---
+none appeared (only unrelated OS-level noise from the emulator itself:
+Bluetooth/Ethernet service warnings, launcher `RecyclerView` messages,
+nothing from the app's own package). Screen-capturing the actual
+220ms mid-animation frame proved impractical over `adb`'s round-trip
+latency (confirmed the before/after settled states are correct instead,
+consistent with the passing widget test that exercises the same
+transition deterministically via `pumpAndSettle`).
+
+**What remains visually weak (starting hypothesis, not a commitment):**
+
+-   No other motion exists yet: item add/remove, drag-and-drop settle
+    (beyond Material's own default), list creation, and the AI
+    generate/preview/accept flow are all still instant beyond default
+    Material transitions. A dedicated motion pass across these could be
+    a future iteration, but per `DESIGN_RALPH.md`'s escalation
+    guidance, a full sweep is a large-ish theme better done
+    deliberately rather than piecemeal.
+-   Section headers inside a multi-section list still lack the eyebrow
+    treatment used elsewhere (carried over from DESIGN-002's notes ---
+    still true, still untouched).
+-   Empty states (Lists, Templates) are still icon + two lines of
+    centered text; still the lowest-risk place for the AI-generated
+    illustration direction `CLAUDE.md` encourages.
+-   The Lists screen's per-card `LinearProgressIndicator` still jumps
+    to its new value instantly when returning from a list where
+    completion changed --- an animated progress fill (`TweenAnimationBuilder`
+    around the `value`) would be a small, low-risk companion to this
+    iteration's work, not done here to keep this iteration's diff
+    focused on one screen/one interaction.
+
+**Next:** Any of the above, per the next iteration's own inspection.
+
+---
+
 ## 2026-09-12 --- DESIGN-002: give the AI Create screen a real identity
 
 **Why this:** Re-inspecting the app fresh per `DESIGN_RALPH.md`'s Core

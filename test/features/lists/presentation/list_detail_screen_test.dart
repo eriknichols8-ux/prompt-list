@@ -134,23 +134,35 @@ void main() {
 
     await pumpDetailScreen(tester);
 
-    Text findLabel() => tester.widget<Text>(find.text('Milk'));
+    // The completion style now animates via an AnimatedDefaultTextStyle
+    // ancestor (see _AnimatedCompletionCheckbox/_ItemRow), so the target
+    // decoration lives on that widget rather than on the Text itself.
+    TextDecoration? findLabelDecoration() => tester
+        .widgetList<AnimatedDefaultTextStyle>(
+          find.ancestor(
+            of: find.text('Milk'),
+            matching: find.byType(AnimatedDefaultTextStyle),
+          ),
+        )
+        .first
+        .style
+        .decoration;
     Checkbox findCheckbox() => tester.widget<Checkbox>(find.byType(Checkbox));
 
     expect(findCheckbox().value, isFalse);
-    expect(findLabel().style?.decoration, isNot(TextDecoration.lineThrough));
+    expect(findLabelDecoration(), isNot(TextDecoration.lineThrough));
 
     await tester.tap(find.byType(Checkbox));
     await tester.pumpAndSettle();
 
     expect(findCheckbox().value, isTrue);
-    expect(findLabel().style?.decoration, TextDecoration.lineThrough);
+    expect(findLabelDecoration(), TextDecoration.lineThrough);
 
     await tester.tap(find.byType(Checkbox));
     await tester.pumpAndSettle();
 
     expect(findCheckbox().value, isFalse);
-    expect(findLabel().style?.decoration, isNot(TextDecoration.lineThrough));
+    expect(findLabelDecoration(), isNot(TextDecoration.lineThrough));
   });
 
   driftTestWidgets('dragging the handle reorders items', (tester) async {
